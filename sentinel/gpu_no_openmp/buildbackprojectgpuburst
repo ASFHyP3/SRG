@@ -1,0 +1,2 @@
+nvcc -Xcompiler -fopenmp -c azimuth_compress_burst.cu -Wno-deprecated-gpu-targets 
+gfortran -o backprojectgpuburst -L /usr/local/cuda/lib64 -I /usr/local/cuda/include -lcudart -lcuda backprojectgpu.f90 azimuth_compress_burst.o sql_mod.f90 bounds.f90 orbitrangetime.f90 latlon.f90 intp_orbit.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 orbithermite.f filelen.o sql_f90.o io.o -lsqlite3 -fopenmp -lfftw3f -lgomp -lstdc++

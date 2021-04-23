@@ -1,0 +1,4 @@
+gcc -c  /home/zebker/stdproc/soidb/sql_mod.f90
+gcc -c  focusroidb.f90
+gcc -c  /home/zebker/stdproc/soidb/sql_f90.c
+gfortran -o focusroidb focusroidb.o sql_mod.o sql_f90.o -lsqlite3 -lfftw

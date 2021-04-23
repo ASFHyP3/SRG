@@ -1,0 +1,11 @@
+WIDTH         3601          
+FILE_LENGTH   3601          
+X_FIRST       -156.00000000 
+Y_FIRST       20.00000000   
+X_STEP         0.27777778E-03
+Y_STEP        -0.27777778E-03
+X_UNIT        degrees       
+Y_UNIT        degrees       
+Z_OFFSET      0             
+Z_SCALE       1             
+PROJECTION    LL            

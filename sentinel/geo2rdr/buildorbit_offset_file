@@ -1,0 +1,1 @@
+gfortran -o orbit_offset_file orbit_offset_file.f90 bounds.f90 latlon.f90 orbithermite.f radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 sql_f90.o sql_mod.f90 -lsqlite3 -fopenmp

@@ -1,0 +1,40 @@
+cd DEM
+gfortran -o mosaicDEM mosaicDEM.f90
+gfortran -o createspecialdem createspecialdem.f90
+cd ..
+cd sentinel
+gfortran -o createslc createslc.f90
+
+gcc -c azimuth_compress_cpu.c -lm -fopenmp
+
+gcc -c filelen.c io.c sentinel_raw_process_cpu.c decode_line_memory.c -lm -fopenmp
+
+gfortran -c processsubcpu.f90 backprojectcpusub.f90 bounds.f90 orbitrangetime.f90 latlon.f90 intp_orbit.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 orbithermite.f burstparams.f90 sentineltimingsub.f90 getburststatevectors.f90 -ffixed-line-length-none -fopenmp
+
+gcc -o sentinel_raw_process_cpu sentinel_raw_process_cpu.o decode_line_memory.o processsubcpu.o backprojectcpusub.o azimuth_compress_cpu.o bounds.o orbitrangetime.o latlon.o intp_orbit.o radar_to_xyz.o unitvec.o tcnbasis.o curvature.o cross.o orbithermite.o filelen.o io.o sentineltimingsub.o getburststatevectors.o -lfftw3f -lgfortran -lgomp -lm
+
+cd geo2rdr
+gfortran -o estimatebaseline estimatebaseline.f90 intp_orbit.f90 latlon.f90 orbithermite.f -ffixed-line-length-none
+
+cd ../..
+cd util
+gcc -c io.c
+gfortran -o nbymi2 nbymi2.f io.o
+gfortran -c lsq.f90
+gfortran -o regressheight regressheight.f90 lsq.o
+cd ..
+cd int
+gfortran -o findrefpoints findrefpoints.f90
+gcc -c ../util/filelen.c
+gfortran -o crossmul crossmul.f90 filelen.o -lfftw3f -fopenmp
+gfortran -o makecc makecc.f90 filelen.o -fopenmp
+cd ..
+cd sbas
+gfortran -o sbas sbas.f90 svd.f90 -fopenmp
+cd ..
+tar xvf snaphu_v2_0b0_0_0.tar
+cd snaphu_v2.0b0.0.0/src
+make
+cd ..
+cp bin/snaphu ../bin/snaphu
+cd ..

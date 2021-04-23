@@ -1,0 +1,4 @@
+gcc -c decode_line.c
+gcc -c cfuncs.c
+
+gfortran -o testdecode_line testdecode_line.f90 filelen.o decode_line.o cfuncs.o

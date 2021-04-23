@@ -1,0 +1,119 @@
+!
+!
+!  findrefpoints - find candidate reference points from stack of unw and cc files
+!
+!    take some looks for better coherence estimates
+!    find points with high correlation and minimal motion
+!
+
+implicit none
+character*300 unwlist, unwfile(100000), intfile(100000), ampfile(100000), unw, cc, str
+complex, allocatable :: ampstack(:,:,:), amp(:,:)
+complex, allocatable :: intstack(:,:,:), int(:,:)
+real, allocatable :: ccstack(:,:,:), locs(:,:)
+integer nx, ny, i, nigrams, k, ii, jj, mx, my, looks, nrefs
+real amp1, amp2, thresh
+
+looks=4
+thresh=0.6
+
+if (iargc().lt.3)then
+   print *,'Usage: findrefpoints unwlist nx ny <thresh=0.6>'
+   stop
+end if
+
+call getarg(1,unwlist)
+call getarg(2,str)
+read(str,*)nx
+call getarg(3,str)
+read(str,*)ny
+if (iargc().ge.4)then
+   call getarg(4,str)
+   read(str,*)thresh
+end if
+
+! get list of interferograms
+open(21,file=unwlist)
+do i=1,100000
+   read(21,*,end=11)str
+   k=index(str,'.unw')
+   intfile(i)=str(1:k-1)//'.int'
+   ampfile(i)=str(1:k-1)//'.amp'
+!   print *,intfile(i),ampfile(i)
+end do
+11 nigrams=i-1
+close(21)
+
+!  array allocations
+mx=nx/looks
+my=ny/looks
+print *,'Interferograms: ',nigrams,mx,my
+allocate (int(nx,ny), amp(nx,ny), intstack(mx,my,nigrams), ampstack(mx,my,nigrams))
+allocate (ccstack(mx*2,my,nigrams), locs(nx,ny))
+
+! create multilooked stack
+intstack=complex(0.,0.)
+ampstack=complex(0.,0.)
+locs=0
+do i=1,nigrams
+   open(21,file=intfile(i),access='direct',recl=nx*ny*8)
+   read(21,rec=1)int
+   close(21)
+   open(21,file=ampfile(i),access='direct',recl=nx*ny*8)
+   read(21,rec=1)amp
+   close(21)
+   ! multilook by looks
+   do ii=1,mx
+      do jj=1,my
+         intstack(ii,jj,i)=sum(int(ii*looks-(looks-1):ii*looks,jj*looks-(looks-1):jj*looks))
+         amp1=sum(real(amp(ii*looks-(looks-1):ii*looks,jj*looks-(looks-1):jj*looks))**2)
+         amp2=sum(imag(amp(ii*looks-(looks-1):ii*looks,jj*looks-(looks-1):jj*looks))**2)
+         ampstack(ii,jj,i)=complex(sqrt(amp1),sqrt(amp2))
+         ccstack(ii,jj,i)=amp1*amp2
+         if (amp1.le.1.e-10.or.amp2.le.1.e-10)then
+            ccstack(ii+mx,jj,i)=0.
+         else
+            ccstack(ii+mx,jj,i)=cabs(intstack(ii,jj,i))/sqrt(amp1*amp2)
+         end if
+      end do
+   end do
+end do
+
+!open(99,file='ccstack',recl=mx*my*nigrams*8,access='direct')
+!write(99,rec=1)ccstack
+!close(99)
+!open(99,file='intstack',recl=mx*my*nigrams*8,access='direct')
+!write(99,rec=1)intstack
+!close(99)
+!open(99,file='ampstack',recl=mx*my*nigrams*8,access='direct')
+!write(99,rec=1)ampstack
+!close(99)
+
+!  which pixels have all cc > thresh?
+open(31,file='ref_locs')
+nrefs=0
+do ii=1,mx
+   do jj=1,my
+      k=1
+      do i=1,nigrams
+         if(ccstack(ii+mx,jj,i).lt.thresh.and.ccstack(ii+mx,jj,i).gt.0.001)k=0
+      end do
+      if (k.eq.1)then
+!         print *,'Candidate: ',ii,jj,sum(ccstack(ii+mx,jj,:))/nigrams
+         locs(ii*looks-looks/2-1:ii*looks-looks/2+1,jj*looks-looks/2-1:jj*looks-looks/2+1)=1.
+         write(31,*)ii*looks-looks/2,jj*looks-looks/2
+         nrefs=nrefs+1
+      end if
+   end do
+end do
+close(31)
+print *,'Found ',nrefs,' reference points'
+
+open(99,file='locs',access='direct',recl=nx*8)
+do i=1,ny
+   write(99,rec=i)cabs(amp(:,i)),locs(:,i)
+end do
+close(99)
+
+end
+

@@ -1,0 +1,12 @@
+
+  real in(100,100),out(100,100)
+
+  do i=1,100
+     do j=1,100
+        in(i,j)=i*2+j+4.5
+     end do
+  end do
+
+  call fitplane(in,out,100,100)
+
+end program

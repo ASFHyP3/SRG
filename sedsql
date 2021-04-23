@@ -1,0 +1,4 @@
+sed -i 's/import sqlite3//g' */*.py
+sed -i 's/import sqlite as sqlite3//g' */*.py
+sed -i 's/^if.*ver.*:$//g' */*.py
+

@@ -1,0 +1,51 @@
+!
+!  mergeslcs - merge 2 slcs for more complete coverage
+!
+!  usage: mergeslcs slc1 slc2 width <outfile>
+!
+!  if no outfile is supplied then the result overwrites slc1
+!
+
+  character*300 f1, f2, outfile
+  complex*8, allocatable :: data1(:), data2(:)
+  integer*8 filelen, bytes
+
+  if(iargc().lt.3)then
+     print *,'usage: mergeslcs slc1 slc2 width <outfile> (no outfile overwrites slc1)'
+     stop
+  end if
+
+  call getarg(1,f1)
+  call getarg(2,f2)
+  call getarg(3,outfile)
+  read(outfile,*)iwidth
+  if(iargc().ge.4)then
+     call getarg(4,outfile)
+  end if
+
+  bytes=filelen(f1)
+  lines=bytes/iwidth/8
+  print *,'Bytes, Lines: ',bytes,lines
+
+  allocate (data1(iwidth), data2(iwidth))
+
+  open(21,file=f1,access='direct',recl=iwidth*8)
+  open(22,file=f2,access='direct',recl=iwidth*8)
+  if(iargc().ge.4)open(23,file=outfile,access='direct',recl=iwidth*8)
+
+  do i=1,lines
+     read(21,rec=i)data1
+     read(22,rec=i)data2
+
+     do j=1,iwidth
+        if(cabs(data1(j)).le.1.d-15)data1(j)=data2(j)
+     end do
+
+     if(iargc().ge.4)then
+        write(23,rec=i)data1
+     else
+        write(21,rec=i)data1
+     end if
+  end do
+
+end program

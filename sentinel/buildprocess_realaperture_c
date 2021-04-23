@@ -1,0 +1,1 @@
+gcc -o process_realaperture process_realaperture.c -I/home/zebker/fft//fftw-3.1.2/api -L/home/zebker/fft//fftw-3.1.2/.libs -lfftw3f -lm -fopenmp

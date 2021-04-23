@@ -1,0 +1,3 @@
+gcc -c eigen.f
+gcc -c matrixinv.f
+gfortran -o sbas_test sbas_test.f90 eigen.o matrixinv.o

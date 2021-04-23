@@ -1,0 +1,1 @@
+gfortran -o burst_roidb burst_roidb.f90 sql_mod.f90  sql_f90.o -lsqlite3

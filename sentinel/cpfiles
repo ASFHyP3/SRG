@@ -1,0 +1,16 @@
+cp ../sql_f90.c .
+cp ../backprojectgpu.f90 .
+cp ../sql_mod.f90 .
+cp ../bounds.f90 .
+cp ../orbitrangetime.f90 .
+cp ../latlon.f90 .
+cp ../intp_orbit.f90 .
+cp ../radar_to_xyz.f90 .
+cp ../unitvec.f90 .
+cp ../tcnbasis.f90 .
+cp ../curvature.f90 .
+cp ../cross.f90 .
+cp ../orbithermite.f .
+cp ../filelen.c .
+cp ../io.c .
+

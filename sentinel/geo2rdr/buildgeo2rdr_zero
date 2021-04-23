@@ -1,0 +1,1 @@
+gfortran -o geo2rdr_zero geo2rdr_zero.f90 bounds.f90 tcnbasis.f90 sql_mod.o sql_f90.o orbithermite.f latlon.f90 unitvec.f90 cross.f90 radar_to_xyz.f90 curvature.f90 intp_orbit.f90 orbitrangetime.f90 resample2grid_burst.f90 -lsqlite3 -fopenmp 

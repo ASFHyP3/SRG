@@ -1,0 +1,4 @@
+We failed to find at least one DEM file 
+Check demfiles.txt to see which one is missing 
+We filled missing parts with all 0s 
+Hopefully its ocean!!! Otherwise please make your own DEM!

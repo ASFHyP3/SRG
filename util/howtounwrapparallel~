@@ -1,0 +1,14 @@
+1.  Create the int amp and cc files using ~/alosdgx/run_dither.py
+
+2.  If desired look down these by creating a subdirectory as in this example
+
+    mkdir 4x4
+    cd 4x4
+    ~/util/4x4.py width looks
+
+3.  get the intlist, split it into multiple lists
+
+    ~/util/splitintlist.py
+
+4.  unwrap using ~/util/rununwrap
+

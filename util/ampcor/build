@@ -1,0 +1,1 @@
+gfortran ampcor.F second.o -o ampcor /home/zebker/roi_pac_3/ROI_PAC_3_0/ROI_PAC/multibuild-071009-1328/gfortran64/LIB/src/libroipac.a -lfftw3f
