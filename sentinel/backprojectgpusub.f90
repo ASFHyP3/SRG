@@ -132,7 +132,9 @@ subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, l
   !print *,'linesmax ',linesmax, nbursts
   
   do iburst=1,nbursts
-     call burstparams(rangeprocdata(1,1+linesmax*(iburst-1)), starttime, prf, samplefreq, pri, range0, wvl)
+     header=transfer(rangeprocdata(1:10,1+linesmax*(iburst-1)), header)
+     call burstparams(header, starttime, prf, samplefreq, pri, range0, wvl)
+!     call burstparams(rangeprocdata(1,1+linesmax*(iburst-1)), starttime, prf, samplefreq, pri, range0, wvl)
      !print *,'burstparams ',starttime,prf,samplefreq,pri,range0,wvl
      slantRangeTime=2*range0/sol
      if(iburst.le.9)posfile='positionburst'//char(iburst+48)//'.out'
@@ -256,7 +258,7 @@ subroutine fdopcoefs(data,len,lines,fdcoefs)
   complex data(len,lines)
   real*8 fdcoefs(2)
 
-  integer word, elevationbeam,azimuthbeam
+  integer word, elevationbeam, azimuthbeam
   integer*1 byte
   integer*1, allocatable ::  b(:,:)
   complex, allocatable ::  header(:,:)
@@ -271,8 +273,10 @@ subroutine fdopcoefs(data,len,lines,fdcoefs)
 
      !  save headers
      header=data(1:10,:)
-     call headerbytes(header,b,lines)
-     !b=transfer(header,byte)
+     do i=1,lines
+        b(:,i)=transfer(header(:,i),b)
+     end do
+!     call headerbytes(header,b,lines)
 
      ! get azimuth beam address
 !  open(31,file='azibeam.out')

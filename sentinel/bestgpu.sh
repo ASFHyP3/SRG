@@ -15,7 +15,7 @@ if [ $n_gpus -eq 0 ]; then
   exit -1
 fi
 
-f_gpu=`nvidia-smi.exe | sed -e '1,/Processes/d' \
+f_gpu=`nvidia-smi | sed -e '1,/Processes/d' \
   | tail -n+3 | head -n-1 | awk '{print $2}'\
   | awk -v ng=$n_gpus 'BEGIN{for (n=0;n<ng;++n){g[n] = 1}} {delete g[$1];} END{for (i in g) print i}' \
   | tail -n 1`

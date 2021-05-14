@@ -4,20 +4,11 @@
 
 import sys
 from datetime import datetime
-ver=sys.version_info
-if ver[1] == 4:
-    import sqlite as sqlite3
-
-if ver[1] > 4:
-    import sqlite3
-
-
 import os
-import sys
 import math
 
 if len(sys.argv) < 3:
-    print 'Usage: sbas_setup.py sbas_list (Peg_point_list.txt or geolist)'
+    print ('Usage: sbas_setup.py sbas_list (Peg_point_list.txt or geolist)')
     sys.exit(1)
 
 sbas_list=sys.argv[1]
@@ -46,9 +37,9 @@ for line in peg:
       #  print k,slctime,deltatime,'\n'
     k=k+1
 
-print
-print 'slctime ',slctime
-print 'deltime ',deltatime
+print ()
+print ('slctime ',slctime)
+print ('deltime ',deltatime)
 
 ftimedeltas=open('timedeltas.out','w')  # save time intervals between slcs
 for i in range(1,len(deltatime)):
@@ -85,14 +76,14 @@ for line in sbas:
     slc2time=datetime.strptime(secondaryname, '%Y%m%d').toordinal()+1721424.5
 
     iprint=0
-    if iprint==1:
-        print primary
-        print primaryname
-        print secondary
-        print secondaryname
-        print timebaseline
-        print spacebaseline
-        print primaryyear+' '+primarymon+' '+primaryday+' '+str(slc1time)+'\n'
+#    if iprint==1:
+#        print primary
+#        print primaryname
+#        print secondary
+#        print secondaryname
+#        print timebaseline
+#        print spacebaseline
+#        print primaryyear+' '+primarymon+' '+primaryday+' '+str(slc1time)+'\n'
 
     # spatial baseline to Bperp.out
     fbperp.write(spacebaseline+'\n')

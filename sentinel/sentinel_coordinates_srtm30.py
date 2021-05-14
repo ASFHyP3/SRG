@@ -9,7 +9,8 @@ import os
 
 # get home environment
 # get the current environment
-HOME = os.environ['PROC_HOME']
+# HOME = os.environ['MYHOME']+'/sentinel'
+HOME = '$PROC_HOME/sentinel'
 print ("HOME is "+HOME)
 
 if len(sys.argv) < 2:
@@ -69,7 +70,7 @@ fd.write(str(lonmax)+'\n')
 fd.close()
 
 # get the chosen 5 or 30 m srtm dem 
-command = HOME+'/sentinel/latlon.srtm30.py '+fullres
+command = HOME+'/latlon.srtm30.py '+fullres
 print (command)
 ret = os.system(command)
 

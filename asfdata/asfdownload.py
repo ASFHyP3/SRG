@@ -188,9 +188,9 @@ class bulk_downloader:
           print (" > Cookiejar is bunk: {0}".format(self.cookie_jar))
           return False
 
-       
-# File we know is valid, used to validate cookie
+       # File we know is valid, used to validate cookie
        file_check = 'https://urs.earthdata.nasa.gov/profile'
+
        # Apply custom Redirect Hanlder
        opener = build_opener(HTTPCookieProcessor(self.cookie_jar), HTTPHandler(), HTTPSHandler(**self.context))
        install_opener(opener)
@@ -221,12 +221,8 @@ class bulk_downloader:
           try:
              redir_url = response.info().getheader('Location')
           except AttributeError:
-          if e.code == 401:
-             print (" > IMPORTANT: Your user does not have permission to download this type of data!")
-     
-          if e.code == 403:
-             print (" > Got a 403 Error trying to download this file.  ")
-             print (" > You MAY need to log in this app and agree to a EULA. ")
+             redir_url = response.getheader('Location')
+
           #Funky Test env:
           if ("vertex-retired.daac.asf.alaska.edu" in redir_url and "test" in self.asf_urs4['redir']):
              print ("Cough, cough. It's dusty in this test env!")

@@ -23,12 +23,6 @@ from datetime import datetime
 # get the current environment
 HOME = os.environ['MYHOME']+'/sentinel'
 
-print ('HOME= ',HOME)
-
-#command = HOME+'/test/hello'
-#print (command)
-#ret = os.system(command)
-
 if len(sys.argv) < 1:
     print ('Usage: sentinel_cpu(_cloud).py <vv or vh (def. vv)>')
     print
@@ -124,7 +118,7 @@ for zipfile in zipfiles:
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (orbitfilename, err) = proc.communicate()
     orbitfilename=orbitfilename.rstrip()
-    orbitfilename=str(orbitfilename).lstrip('b')
+    orbitfilename=str(orbitfilename,'UTF-8')
     SAFEname=zipfile[0:len(zipfile)-4]
 
 #    create a DEM file if none exists
@@ -137,24 +131,19 @@ for zipfile in zipfiles:
 
     if create_dem==1:
         command=HOME+"/sentinel_coordinates_srtm30.py "+SAFEname
+        command=HOME+"/sentinel_coordinates_copernicus.py "+SAFEname  # use copernicus dem
         print (command)
         ret=os.system(command)
         
-#    if create_dem==1:
-#        ret=os.system('$PROC_HOME/DEM/latlon.py')
-
 #    and process the scene in you have the precise orbit
 
     if len(orbitfilename) < 1:
         print ('Missing precise orbit file for ',zipfile)
         command = 'echo skipping file, missing precise orbit'
     else:
-        command=HOME+'/sentinel_scene_cpu.py '+SAFEname+' '+orbitfilename.strip()+' '+pol
+        command=HOME+'/sentinel_scene_cpu.py '+SAFEname+' '+orbitfilename+' '+pol
 
-        print (SAFEname)
-        print (str(orbitfilename.strip()))
-        print (pol)
-        print (command)
+    print (command)
     ret=os.system(command)
 
     # store geo slc file in the google cloud
@@ -165,11 +154,16 @@ for zipfile in zipfiles:
 print ('Loop over scenes complete.')
 
 #  clean up a bit
-command = 'rm *.hgt* positionburst* dem* DEM* q*'
+#command = 'rm *.hgt* positionburst* dem* DEM* q*'
+command = 'find . -name \*.hgt\* -delete'
 ret=os.system(command)
-
-
-
-
+command = 'find . -name dem\* -delete'
+ret=os.system(command)
+command = 'find . -name DEM\* -delete'
+ret=os.system(command)
+command = 'find . -name q\* -delete'
+ret=os.system(command)
+command = 'find . -name positionburst\* -delete'
+ret=os.system(command)
 
 

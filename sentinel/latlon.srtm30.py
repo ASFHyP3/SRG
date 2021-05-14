@@ -195,7 +195,6 @@ print (command)
 ret=os.system(command)
     
 rsc=open('elevation.dem.rsc','r')
-print("THE FILE HAS BEEN OPENED THEREFORE IT EXISTS RIGHT NOW")
 lines=rsc.readlines()
 st=[]
 num=[]

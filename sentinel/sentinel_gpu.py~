@@ -131,6 +131,7 @@ for zipfile in zipfiles:
     command='grep '+orbitfilestartdate+' preciseorbitfiles'
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (orbitfilename, err) = proc.communicate()
+    orbitfilename=str(orbitfilename,'UTF-8')
     print ("Precise orbit file found:", orbitfilename)
 
     SAFEname=zipfile[0:len(zipfile)-4]
@@ -144,7 +145,8 @@ for zipfile in zipfiles:
     print ('create_dem= ',create_dem)
 
     if create_dem==1:
-        command=HOME+"/sentinel_coordinates_srtm30.py "+SAFEname
+#        command=HOME+"/sentinel_coordinates_srtm30.py "+SAFEname  # nasadem
+        command=HOME+"/sentinel_coordinates_copernicus.py "+SAFEname
         print (command)
         ret=os.system(command)
         
@@ -159,8 +161,8 @@ for zipfile in zipfiles:
 #        print (orbitfilename.strip())
 #        print (str(orbitfilename.strip()))
 #        print (str(orbitfilename.strip().decode()))
-        print ('type of orbitfilename ',type(orbitfilename),orbitfilename)
-        command=HOME+'/sentinel_scene_gpu.py '+SAFEname+' '+str(orbitfilename,'UTF-8').strip()+' '+pol
+#        print ('type of orbitfilename ',type(orbitfilename),orbitfilename)
+        command=HOME+'/sentinel_scene_gpu.py '+SAFEname+' '+orbitfilename+' '+pol
 
     print (command)
     ret=os.system(command)
@@ -173,8 +175,17 @@ for zipfile in zipfiles:
 print ('Loop over scenes complete.')
 
 #  clean up a bit
-command = 'rm *.hgt* DEM* q*'
-command = 'rm *.hgt* positionburst* dem* DEM* q*'
+#command = 'rm *.hgt* DEM* q*'
+#command = 'rm *.hgt* positionburst* dem* DEM* q*'
+command = 'find . -name \*.hgt\* -delete'
+ret=os.system(command)
+command = 'find . -name dem\* -delete'
+ret=os.system(command)
+command = 'find . -name DEM\* -delete'
+ret=os.system(command)
+command = 'find . -name q\* -delete'
+ret=os.system(command)
+command = 'find . -name positionburst\* -delete'
 ret=os.system(command)
 
 

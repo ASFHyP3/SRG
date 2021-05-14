@@ -69,11 +69,11 @@
       read(string(1:14),'(a)')strystep
       read(string(15:60),*)ystep
 
-      print *,'original dem: ',xfirst,yfirst,xstep,ystep
-      print *,'new limits: ',toplat,botlat,leftlon,rightlon
-      print *,'delta lat, lon: ',toplat-botlat, rightlon-leftlon
-      print *,'size lat, lon: ',(toplat-botlat)/abs(ystep), (rightlon-leftlon)/abs(xstep)
-      print *,'double lines: ',(toplat-yfirst)/ystep+1,(botlat-yfirst)/ystep+1,(leftlon-xfirst)/xstep+1,(rightlon-xfirst)/xstep+1
+!      print *,'original dem: ',xfirst,yfirst,xstep,ystep
+!      print *,'new limits: ',toplat,botlat,leftlon,rightlon
+!      print *,'delta lat, lon: ',toplat-botlat, rightlon-leftlon
+!      print *,'size lat, lon: ',(toplat-botlat)/abs(ystep), (rightlon-leftlon)/abs(xstep)
+!      print *,'double lines: ',(toplat-yfirst)/ystep+1,(botlat-yfirst)/ystep+1,(leftlon-xfirst)/xstep+1,(rightlon-xfirst)/xstep+1
 
       !c  compute limits
       latsize=nint((toplat-botlat)/abs(ystep))
@@ -81,12 +81,12 @@
       !c  take care of half pixel offsets in copernicus dem
       fracy=(toplat-yfirst)/ystep-int((toplat-yfirst)/ystep)
       fracx=(leftlon-xfirst)/xstep-int((leftlon-xfirst)/xstep)
-      print *,'fracx fracy ',fracx,fracy,fracx-1,fracy-1
+!      print *,'fracx fracy ',fracx,fracy,fracx-1,fracy-1
       linetop=nint((toplat-yfirst)/ystep+fracy)
       linebot=linetop+latsize !nint((botlat-yfirst)/ystep)+1
       ileft=nint((leftlon-xfirst)/xstep+fracx)
       iright=ileft+lonsize !nint((rightlon-xfirst)/xstep)+1
-      print *,'linetop linebot ileft iright ',linetop,linebot,ileft,iright
+!      print *,'linetop linebot ileft iright ',linetop,linebot,ileft,iright
 
       newwidth=(iright-ileft)*ifactorx+1
       newlength=(linebot-linetop)*ifactory+1
@@ -136,8 +136,8 @@
       else
 !     if(k.eq.k)stop
 
-         print *,'iwidth ilength newwidth ifactor',iwidth,ilength,newwidth,ifactorx,ifactory
-         print *,'xstep, ystep ',xstep,ystep
+!         print *,'iwidth ilength newwidth ifactor',iwidth,ilength,newwidth,ifactorx,ifactory
+!         print *,'xstep, ystep ',xstep,ystep
          !c  open input and output dem files
          allocate (idata(iwidth,2),outdata(newwidth,ifactory))
          open(21,file=infile,access='direct',recl=iwidth*2)

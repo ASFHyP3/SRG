@@ -19,8 +19,8 @@ import string
 import time
 import subprocess
 import argparse
-import getpass
 from datetime import datetime
+
 
 # get the current environment
 HOME = os.environ['PROC_HOME']
@@ -45,14 +45,13 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
                     print("WGET REQUEST: ", command)
                 ret = os.system(command)
 
-
     # get the PATH of the script directory
     PATH=os.path.dirname(os.path.abspath(sys.argv[0]))
 
     # Create a 'params' file
     params=open("params","w")
-    p1 = "elevation.dem"
-    p2 = "elevation.dem.rsc"
+    p1 = os.getcwd()+"/elevation.dem"
+    p2 = os.getcwd()+"/elevation.dem.rsc"
     params.write(p1+'\n')
     params.write(p2+'\n')
     params.close()
@@ -70,10 +69,11 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
                 ret = os.system(command)
                 SAFEnames.append(file[0:len(file)-4])
 
+    #print "zipfiles: ",zipfiles
     print ("basenames: ",SAFEnames)
 
     # download the precise orbit files for these zips
-    command = HOME+'/sentinel/sentinel_orbitfiles.py ' + Data_Dir+" --username \""+username+"\" --password \""+password+"\"" 
+    command = HOME+'/sentinel/sentinel_orbitfiles.py ' + Data_Dir +" --username \""+username+"\" --password \""+password+"\"" 
     print (command)
     ret=os.system(command)
 
@@ -85,6 +85,7 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
 
     print ('Precise orbit list:')
     print (preciseorbitlist)
+    #print
 
     # loop over directories and process each with sentinel_back.py
     #   sentinel_back needs zipfile and precise orbit 
@@ -99,6 +100,9 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
             print ('This is a single pol acquisition')
         char2=zipfile[char1:].find('T')
         scenedate=zipfile[char1+4:char1+char2]
+    #    orbitfilestartdate=int(scenedate)-1
+    #    orbitfilestopdate=int(scenedate)+1
+    #    orbitfilename = 'no_precise_orbit'
         doy=datetime.strptime(scenedate, '%Y%m%d').timetuple().tm_yday
         year=scenedate[0:4]   # day of year and year for scene
         print ('doy ',doy,' ',year)
@@ -110,13 +114,12 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
         command='grep '+orbitfilestartdate+' preciseorbitfiles'
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         (orbitfilename, err) = proc.communicate()
-        orbitfilename=orbitfilename.rstrip()
-        orbitfilename=str(orbitfilename).lstrip('b')
+        orbitfilename=str(orbitfilename,'UTF-8').rstrip()
         SAFEname=zipfile[0:len(zipfile)-4]
 
     #    create a DEM file if none exists
         create_dem=1
-        for file in os.listdir("."):
+        for file in os.listdir('.'):
             if file == 'elevation.dem':
                 create_dem=0
 
@@ -124,28 +127,41 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
 
         if create_dem==1:
             command=HOME+"/sentinel/sentinel_coordinates_srtm30.py "+SAFEname
-            #command=HOME+"/sentinel_coordinates_copernicus.py "+SAFEname  # use copernicus dem
+            command=HOME+"/sentinel/sentinel_coordinates_copernicus.py "+SAFEname  # use copernicus dem
             print (command)
             ret=os.system(command)
             
     #    and process the scene in you have the precise orbit
+
         if len(orbitfilename) < 1:
             print ('Missing precise orbit file for ',zipfile)
             command = 'echo skipping file, missing precise orbit'
         else:
-            command=HOME+'/sentinel/sentinel_scene_cpu.py '+SAFEname+' '+orbitfilename.strip()+' '+pol
+            command=HOME+'/sentinel/sentinel_scene_cpu.py '+SAFEname+' '+orbitfilename+' '+pol
 
-            print (SAFEname)
-            print (str(orbitfilename.strip()))
-            print (pol)
-            print (command)
+        print (command)
         ret=os.system(command)
+
+        # store geo slc file in the google cloud
+        #command = HOME+'/sentinel/bin/rclone copy '+SAFEname+'.geo fringe:sentinelproducts'
+        #print (command)
+        #ret=os.system(command)
 
     print ('Loop over scenes complete.')
 
     #  clean up a bit
-    command = 'rm *.hgt* positionburst* dem* DEM* q*'
+    #command = 'rm *.hgt* positionburst* dem* DEM* q*'
+    command = 'find . -name \*.hgt\* -delete'
     ret=os.system(command)
+    command = 'find . -name dem\* -delete'
+    ret=os.system(command)
+    command = 'find . -name DEM\* -delete'
+    ret=os.system(command)
+    command = 'find . -name q\* -delete'
+    ret=os.system(command)
+    command = 'find . -name positionburst\* -delete'
+    ret=os.system(command)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -160,7 +176,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(HOME+"/mydata/","output_dir", args.username, args.password, args.polarization)
-
-
-
-

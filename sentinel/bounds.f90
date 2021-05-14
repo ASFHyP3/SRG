@@ -158,7 +158,7 @@ subroutine bounds(startime,endtime,startr,endr,timeorbit,xx,vv,numstatevec,latlo
 !!$  print *, 'Estimated DEM bounds needed for global height range: '
 !!$  print *, 'Lat: ', min_lat, max_lat
 !!$  print *, 'Lon: ', min_lon, max_lon
-  print '(a,4f12.5)', 'Estimated DEM bounds: ', min_lat, max_lat, min_lon, max_lon
+!!$  print '(a,4f12.5)', 'Estimated DEM bounds: ', min_lat, max_lat, min_lon, max_lon
   latlons(1)=min_lat
   latlons(2)=max_lat
   latlons(3)=min_lon

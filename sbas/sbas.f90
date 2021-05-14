@@ -1,6 +1,5 @@
 ! run sbas on a set of unwrapped files
 ! Read also correlation and amp files
-! Generate a mask
 !  this version allows for averaging multiple reference points if file is supplied
 
 PROGRAM sbas
@@ -97,7 +96,7 @@ PROGRAM sbas
      CLOSE(22)
      phase(:,:,i)=dat((nr+1):2*nr,:)
   END DO
-  PRINT*,'Unwrapped interferograms read in.'
+!  PRINT*,'Unwrapped interferograms read in.'
 
   !read in amplitudes
   DO i=1,ncells
@@ -110,20 +109,13 @@ PROGRAM sbas
   END DO
   amp=sqrt(amp)
 
-  PRINT*,'Amplitudes read in'
+!  PRINT*,'Amplitudes read in'
 
   DEALLOCATE(temp1)
 
   ALLOCATE(mask(nr,naz))
   mask(:,:)=1
   
-  !store amplitudes and phases in complex array
-!  ALLOCATE(cpx(nr,naz,ncells))
-!  DO i=1,ncells
-!     cpx(:,:,i)=cmplx(amp(:,:),phase(:,:,i))
-!  END DO
-
-!  print *,'ref_locs: ',ref_locs(:,1:n_refs)
 
 !Save amp
   OPEN(11,FILE='amp',FORM='unformatted',ACCESS='direct',RECL=nr*naz*4)
@@ -134,12 +126,12 @@ PROGRAM sbas
 !  CLOSE(12)
 
 !Save dimensions of matrices for debug purposes later
-  ampShape=SHAPE(amp)
-  maskShape=SHAPE(mask)
-  phaseShape=SHAPE(phase)
-  OPEN(14,FILE='dimensions',STATUS='replace')
-  WRITE(14,*)ampShape(1),ampShape(2),maskShape(1),maskShape(2),phaseShape(1),phaseShape(2),phaseShape(3)
-  CLOSE(14)
+!  ampShape=SHAPE(amp)
+!  maskShape=SHAPE(mask)
+!  phaseShape=SHAPE(phase)
+!  OPEN(14,FILE='dimensions',STATUS='replace')
+!  WRITE(14,*)ampShape(1),ampShape(2),maskShape(1),maskShape(2),phaseShape(1),phaseShape(2),phaseShape(3)
+!  CLOSE(14)
 
 !Save nr, naz, nslc, ncells parameters in one file
   OPEN(15,FILE='parameters',STATUS='replace')
@@ -192,21 +184,14 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   ALLOCATE(Tminv(nslc-1,ncells))
   ALLOCATE(temp1(ncells))
 
-!  print *,'computing inverse matrix'
-!  print *,ncells,nslc
-!  print *,Tm
   call pinv(Tm,ncells,nslc-1,Tminv)
-  print *,'inverse matrix computed'
-!  open(99,file='Tminv')
-!  do k=1,ncells
-!     write(99,*)Tminv(k,:)
-!  end do
+!  print *,'inverse matrix computed'
+
+!  allocate (ident(nslc-1,nslc-1))
+!  open(99,file='ident')
+!  ident=matmul(Tminv,Tm)
+!  write(99,*)ident
 !  close(99)
-  allocate (ident(nslc-1,nslc-1))
-  open(99,file='ident')
-  ident=matmul(Tminv,Tm)
-  write(99,*)ident
-  close(99)
   
   !  compute the reference phase
   phase_ref=0.
@@ -225,7 +210,7 @@ PRINT*,'Data loaded, total stack time= ',stacktime
      END DO
   END DO
   !$omp end parallel do
-  print *,'SBAS solution computed'
+!  print *,'SBAS solution computed'
   DEALLOCATE(temp1)
   !Write velocity matrix into file
 !  recsize=int8(nr)*int8(naz)*(int8(nslc)-1)*int8(4)
@@ -233,7 +218,7 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   OPEN(28,FILE='velocity',FORM='unformatted',ACCESS='stream')!direct',RECL=recsize)
   WRITE(28)velocity
   close(28)
-  print *,'Velocity written'
+!  print *,'Velocity written'
   OPEN(29,FILE='displacement',FORM='unformatted',ACCESS='direct',RECL=nr*8)
 !  print *,nslc,naz,naz+(nslc-1)*naz
 
@@ -250,7 +235,7 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   end do
   !$omp end parallel do 
   close(29)
-  print *,'Displacements written'
+!  print *,'Displacements written'
 
 !Create stack to plot images (using MATLAB)
   ALLOCATE(stack(nr,naz))
@@ -263,10 +248,7 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   !$omp end parallel do
   !stack=SUM(phase,3)/stacktime
   print *,'Computed average rate rad/day'
-  !Write stack matrix into file, both phase and amp/phase versions
-!  OPEN(29,FILE='stack',FORM='unformatted',ACCESS='direct',RECL=nr*naz*4)
-!  WRITE(29,rec=1)stack
-!  CLOSE(29)
+  !Write stack matrix into file, amp/phase version
   OPEN(29,FILE='stackmht',FORM='unformatted',ACCESS='direct',RECL=nr*8)
   do i=1,naz
      WRITE(29,rec=i)amp(:,i),stack(:,i)
@@ -378,7 +360,7 @@ END FUNCTION Replace_Text
 !    end do
 
     call svd(rows,cols,dmat,Sing,.true.,U,.true.,V,ierr)
-    print *,'svd evaluated'
+!    print *,'svd evaluated'
     
 !    print *,'ierr= ',ierr,rows,cols
 !    print *,'Sing: ',Sing
@@ -425,13 +407,8 @@ END FUNCTION Replace_Text
 !    end do
 
     !V=TRANSPOSE(MATMUL(TRANSPOSE(Sinv),MATMUL(TRANSPOSE(U),mat)))
-    print *,'computing pinv'
+!    print *,'computing pinv'
     matinv(:,:)=sngl(MATMUL(MATMUL(V,Sinv),TRANSPOSE(U)))
-!    print *,'matrix multiply done'
-!    print *,'matinv'
-!    do r=1,cols
-!       print *,(matinv(r,kk),kk=1,rows)
-!    end do
 
 !    deallocate (dmat,Sinv,U,V,Sing)
     deallocate (dmat)
