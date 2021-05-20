@@ -23,7 +23,7 @@ for i in range(npar):
 
 i=0
 for intfile in intlist:
-    print (intfile)
+#    print (intfile)
     k=i % npar
     fd[k].write(intfile)
     i=i+1

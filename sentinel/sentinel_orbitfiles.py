@@ -12,6 +12,8 @@ import argparse
 from datetime import datetime
 
 # environment setup
+
+# environment setup
 # get the current environment
 HOME = os.environ['PROC_HOME']
 

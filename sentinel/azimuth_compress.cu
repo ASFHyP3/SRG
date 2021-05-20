@@ -270,7 +270,7 @@ extern "C" void azimuth_compress_(
 //  time0=t0.tv_sec+t0.tv_usec/1.e6;
 
   // how much memory will we need to allocate?
-  printf("latlons %f %f %f %f\n",latlons[0],latlons[1],latlons[2],latlons[3]);
+//  printf("latlons %f %f %f %f\n",latlons[0],latlons[1],latlons[2],latlons[3]);
   lastline=int((latlons[0] - *firstlat) / *deltalat );
   firstline=int((latlons[1] - *firstlat) / *deltalat );
   if (firstline < 0) firstline=0;

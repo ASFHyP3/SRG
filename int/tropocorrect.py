@@ -14,7 +14,7 @@ if len(sys.argv)<4:
     print ('Usage: tropocorrect.py unwlist unwwidth unwlength <reference_threshold = 0.5>')
     sys.exit(0)
 
-print (len(sys.argv))
+#print (len(sys.argv))
 
 unwlist = sys.argv[1]
 unwwidth = sys.argv[2]

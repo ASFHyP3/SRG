@@ -29,11 +29,29 @@ print (    "\nStep 2.  Download Sentinel raw data to your area\n"+
     "\n"+
     "In the Vertex interface Downloads cart, click on Copy File IDs (not Data Download).  In the following command, paste your file IDs after the prompt.\n")
 
-print("Paste file IDs, terminate with <cr> "),
-fileids = raw_input()
-f=open('fileids','w')
-f.write (fileids)
-f.close()
+print("Paste file IDs, terminate with an added <cr> if needed "),
+filelist=[]
+filelist.append(input())
+while filelist[-1] != '':
+    filelist.append(input())
+
+if len(filelist)==2:  # old vertex format
+    fileids=filelist[0]
+if len(filelist) > 2: # new vertex format
+    fileids=filelist[0]
+    for i in range(len(filelist)-2):
+        fileids+=','
+        fileids+=filelist[i+1]
+if len(filelist) < 2:  # null input 
+    fileids=''
+fids=open('fileids','w')
+fids.write(fileids)
+fids.close()
+
+#fileids = raw_input()
+#f=open('fileids','w')
+#f.write (fileids)
+#f.close()
 
 command = myhome+"/asfdata/enter_file_ids.py"
 #print (command)

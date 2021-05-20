@@ -31,14 +31,14 @@ for i in range(0,len(geos)):
     char1=wordstring.find('SSV_')
     if char1 < 0:
         char1=wordstring.find('SDV_')
-        print ('This is a dual pol acquisition')
+#        print ('This is a dual pol acquisition')
     else:
         print ('This is a single pol acquisition')
     if char1 < 0:
         char1=wordstring.find('SSH_')
         if char1 < 0:
             char1=wordstring.find('SDH_')
-            print ('This is a dual pol acquisition')
+#            print ('This is a dual pol acquisition')
         else:
             print ('This is a single pol acquisition')
 
@@ -47,7 +47,7 @@ for i in range(0,len(geos)):
     scenedate=words[char1+4:char1+char2]
 
     jd=datetime.strptime(str(scenedate), '%Y%m%d').toordinal()+1721424.5
-    print ('Julian day ',jd)
+#    print ('Julian day ',jd)
 
     names_times.append(str(jd)+' '+str(geos[i]))
 
@@ -71,7 +71,7 @@ for i in range(0,len(sortedgeos)):
 
 geolist.close()
 jdfile.close()
-print (jdlist)
+print ('Julian day range: ',jdlist[0],jdlist[-1])
 #print (geos)
  
 #  call the spatial baseline estimator

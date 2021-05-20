@@ -37,8 +37,8 @@
   pi=4.d0*datan2(1.d0,1.d0)
   !  set up transforms using fftw3
   ranfft=32768
-  call sfftw_f77_plan_dft_1d(iplanf, ranfft, data, ref, -1, 64)
-  call sfftw_f77_plan_dft_1d(iplani, ranfft, data, ref,  1, 64)
+  call sfftw_plan_dft_1d(iplanf, ranfft, data, ref, -1, 64)
+  call sfftw_plan_dft_1d(iplani, ranfft, data, ref,  1, 64)
 
   ! get the sorting instructions
   ipri=0
@@ -99,7 +99,7 @@
      phase=2.d0*pi*startfreq*t+pi*ramprate*t*t
      reftime(j)=cmplx(cos(phase),sin(phase))/npts
   end do
-  call sfftw_f77_execute_dft(iplanf,reftime,ref)
+  call sfftw_execute_dft(iplanf,reftime,ref)
 
 ! loop over each line
   !$OMP PARALLEL DO private(bytedata,data,dataspec,ioffset) &
@@ -111,9 +111,9 @@
 !     if(mod(i,2000).eq.1)print *,'At line ',i,in(1:20)
 
      ! transform in range
-     call sfftw_f77_execute_dft(iplanf,bytedata,dataspec) !data,dataspec)
+     call sfftw_execute_dft(iplanf,bytedata,dataspec) !data,dataspec)
      dataspec=dataspec*conjg(ref)  ! multiply by ref
-     call sfftw_f77_execute_dft(iplani,dataspec,bytedata)  ! back to time domain
+     call sfftw_execute_dft(iplani,dataspec,bytedata)  ! back to time domain
      if(burstno(i).ge.1.and.burstno(i).le.burst)then
         ioffset=int(linesmax,8)*int((burstno(i)-1),8)+int(lineinburst(i),8)
         rangeprocdata(1:80, ioffset)=rawdata(1+int(i-1,8)*30000*8:80+int(i-1,8)*30000*8)

@@ -18,7 +18,7 @@
 
 // some declarations
 void decode_line(unsigned char *data, int nq, int packetDataLength, float *samples, int linenum);
-void processsub_(unsigned char *raw1,long long int *nbytes);
+void processsubcpu_(unsigned char *raw1,long long int *nbytes);
   
 // several functions used in this code
 int int2(unsigned char *data){

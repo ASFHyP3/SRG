@@ -86,13 +86,13 @@ PROGRAM mosaicDEM   ! version for non-repeated-line copernicus files
      do i=1,nhoriz
         open(21,file=demfiles(i+jreverse*nhoriz),access='stream')
         read(21,end=10)dat
-        print *,'dem file found, i,j,jreverse: ',trim(demfiles(i+jreverse*nhoriz)),i,j,jreverse
+!        print *,'dem file found, i,j,jreverse: ',trim(demfiles(i+jreverse*nhoriz)),i,j,jreverse
 !        print *,' sum ',sum(dat)
         close(21)
         demfile(1+(i-1)*w:w+(i-1)*w,:)=dat(:,:)
         go to 11
 10      continue
-        print *,'File ',trim(demfiles(i+jreverse*nhoriz)),' not found, using zeros, i,j,jreverse=',i,j,jreverse
+!        print *,'File ',trim(demfiles(i+jreverse*nhoriz)),' not found, using zeros, i,j,jreverse=',i,j,jreverse
         demfile(1+(i-1)*widthrow:widthrow+(i-1)*widthrow,:)=0
 11      continue
      end do

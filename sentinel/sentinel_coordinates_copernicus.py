@@ -62,7 +62,7 @@ fd.write(str(lonmax)+'\n')
 fd.close()
 
 # get dem and rsc files
-command = os.getcwd()+'/DEM/createDEMcop.py elevation.dem elevation.dem.rsc '+str(latmax)+' '+str(latmin)+' '+str(lonmin)+' '+str(lonmax)+' 1 1'
+command = '$PROC_HOME/DEM/createDEMcop.py elevation.dem elevation.dem.rsc '+str(latmax)+' '+str(latmin)+' '+str(lonmin)+' '+str(lonmax)+' 1 1'
 print (command)
 ret = os.system(command)
 

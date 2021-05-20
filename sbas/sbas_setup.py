@@ -37,9 +37,9 @@ for line in peg:
       #  print k,slctime,deltatime,'\n'
     k=k+1
 
-print ()
-print ('slctime ',slctime)
-print ('deltime ',deltatime)
+#print ()
+#print ('slctime ',slctime)
+#print ('deltime ',deltatime)
 
 ftimedeltas=open('timedeltas.out','w')  # save time intervals between slcs
 for i in range(1,len(deltatime)):

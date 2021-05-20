@@ -40,7 +40,6 @@
       open(21,file=fin1,form='unformatted',access='direct',recl=na*8*looksdn)
       nbytes=filelen(trim(fin1))
       nd=nbytes/8/na
-      write(*,*)'Lines in file: ',nd
       call getarg(2,fin2)
       if(trim(fin1).ne.trim(fin2))then
          open(22,file=fin2,form='unformatted',access='direct',recl=na*8*looksdn)
@@ -57,14 +56,15 @@
          call getarg(7,str)
          read(str,*)scale
       end if
-      print *,'Interferogram width: ',na/looksac
+      write(*,*)'Lines in file: ',nd,', interferogram width: ',na/looksac
 
 !c  get ffts lengths for upsampling
       do i=1,24
          nnn=2**i
          if(nnn.ge.na)go to 11
       end do
-11    print *,'FFT length: ',nnn
+11    continue
+!      print *,'FFT length: ',nnn
 !      call fftw_f77_create_plan(iplannnnf,nnn,-1,8)
 !      call fftw_f77_create_plan(iplannnni,nnn*2,1,8)
       call sfftw_plan_dft_1d(iplannnnf, nnn, data, ref, -1, 64)

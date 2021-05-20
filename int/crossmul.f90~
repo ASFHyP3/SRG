@@ -84,7 +84,7 @@
          allocate (in1(na,looksdn),in2(na,looksdn),igram(na*2,looksdn),amp(na*2,looksdn))
          allocate (igramacc(na),ampacc(na),igramtemp(na/looksac),amptemp(na/looksac))
          allocate (up1(nnn*2,looksdn), up2(nnn*2,looksdn), inline1(nnn), inline2(nnn))
-         allocate (temp(nnn),temp2(nnn*2,looksdn),plannnnf(nnn*4+15),plannnni(nnn*2*4+15))
+         allocate (temp(nnn),temp2(nnn*2,looksdn))!,plannnnf(nnn*4+15),plannnni(nnn*2*4+15))
 
 !c     read in lines
          read(21,rec=line,err=98)in1
@@ -103,9 +103,7 @@
             inline1(1:na)=in1(:,i)
             inline1(na+1:nnn)=cmplx(0.,0.)
 !            call fftw_f77_one(iplannnnf,inline1,plannnnf)
-            print *,inline1(1:5)
             call sfftw_execute_dft(iplannnnf,inline1,temp)
-            print *,temp(1:5)
             up1(1:nnn/2,i)=temp(1:nnn/2)!inline1(1:nnn/2)
             up1(2*nnn-nnn/2+1:2*nnn,i)=temp(nnn/2+1:nnn)!inline1(nnn/2+1:nnn)
 !            call fftw_f77_one(iplannnni,up1(1,i),plannnni)
@@ -154,7 +152,7 @@
  99   continue
 
          deallocate (in1, in2, up1, up2, igramtemp, amptemp, igramacc, ampacc)
-         deallocate (inline1, inline2, igram, amp, plannnnf,plannnni,temp,temp2)
+         deallocate (inline1, inline2, igram, amp, temp, temp2)
       end do
       !$omp end parallel do
 
