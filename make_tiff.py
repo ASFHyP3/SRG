@@ -38,14 +38,7 @@ Y_STEP      = np.float(info[5])
 rsc.close()
 
 # Calculate transform for the projection
-print("Calculating Geotransform...")
-X_LAST = X_FIRST + (WIDTH * X_STEP) 
-Y_LAST = Y_FIRST + (FILE_LENGTH * Y_STEP)
-
-X_RES = (X_LAST - X_FIRST) / float(WIDTH)
-Y_RES = (Y_FIRST - Y_LAST) / float(FILE_LENGTH)
-
-geotransform = (X_FIRST, X_RES, 0, Y_LAST, 0, -Y_RES)
+geotransform = (X_FIRST, X_STEP, 0, Y_FIRST, 0, Y_STEP)
 print("Geotransform: ", geotransform)
 
 # Split the complex and real parts and make bands out of them
