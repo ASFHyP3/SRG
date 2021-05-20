@@ -8,15 +8,17 @@ from osgeo import gdal, osr
 parser = argparse.ArgumentParser(description='Convert a .geo file into a tiff')
 parser.add_argument("geo_path", type=str)
 parser.add_argument("rsc_path", type=str)
+parser.add_argument("filename", type=str)
 args = parser.parse_args()
 
 geo_path = vars(args)["geo_path"]
 rsc_path = vars(args)["rsc_path"]
+filename = vars(args)["filename"]
 
 HOME = os.environ['PROC_HOME']
 
 strip_ext = geo_path.split('.')[0].split('/')
-filename = HOME + "/output/" + strip_ext[len(strip_ext) - 1] + ".tiff"
+filename = HOME + "/output/" + filename
 
 # Gather the RSC Data
 print("Gathering RSC Data...")
