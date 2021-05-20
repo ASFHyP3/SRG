@@ -25,25 +25,26 @@ from datetime import datetime
 # get the current environment
 HOME = os.environ['PROC_HOME']
 
-def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str):
+def main(data_dir: str, username: str, password: str, pol: str, use_existing_data=False):
 
     # and start
     print ('Processing stack of sentinel raw data products to coregistered geocoded slcs')
 
     # do we download more data from ASF?
-    for file in os.listdir("."):
-        if file.endswith(".list"):
-            file = open(file)
-            lines = file.readlines()
-            for line in lines:
-                command = "wget -P "+ HOME + "/mydata/ --user \"" + username + "\" --password \"" + password + "\" "
-                if(line[0:3] == "S1A"):
-                    command += "https://datapool.asf.alaska.edu/RAW/SA/" + line
-                    print("WGET REQUEST: ", command)
-                else:
-                    command += "https://datapool.asf.alaska.edu/RAW/SB/" + line
-                    print("WGET REQUEST: ", command)
-                ret = os.system(command)
+    if(not use_existing_data):
+        for file in os.listdir("."):
+            if file.endswith(".list"):
+                file = open(file)
+                lines = file.readlines()
+                for line in lines:
+                    command = "wget -P "+ HOME + "/mydata/ --user \"" + username + "\" --password \"" + password + "\" "
+                    if(line[0:3] == "S1A"):
+                        command += "https://datapool.asf.alaska.edu/RAW/SA/" + line
+                        print("WGET REQUEST: ", command)
+                    else:
+                        command += "https://datapool.asf.alaska.edu/RAW/SB/" + line
+                        print("WGET REQUEST: ", command)
+                    ret = os.system(command)
 
     # get the PATH of the script directory
     PATH=os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -61,10 +62,10 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
     # get list of L0 products
     zipfiles = []
     SAFEnames = []
-    for file in os.listdir(Data_Dir):
+    for file in os.listdir(data_dir):
         if file.endswith(".zip"):
                 zipfiles.append(file)
-                command = 'unzip -u '+Data_Dir+file
+                command = 'unzip -u '+data_dir+file
                 print (command)
                 ret = os.system(command)
                 SAFEnames.append(file[0:len(file)-4])
@@ -73,7 +74,7 @@ def main(Data_Dir: str, Output_Dir: str, username: str, password: str, pol: str)
     print ("basenames: ",SAFEnames)
 
     # download the precise orbit files for these zips
-    command = HOME+'/sentinel/sentinel_orbitfiles.py ' + Data_Dir +" --username \""+username+"\" --password \""+password+"\"" 
+    command = HOME+'/sentinel/sentinel_orbitfiles.py ' + data_dir +" --username \""+username+"\" --password \""+password+"\"" 
     print (command)
     ret=os.system(command)
 
@@ -173,6 +174,7 @@ if __name__ == "__main__":
                         help="hyp3 password")
     parser.add_argument('--polarization', type=str, default="vv",
                         help="Specify vv or vh Polarization. Default=vv")
+    parser.add_argument('--use_existing_data', type=bool, default=False)
     args = parser.parse_args()
 
-    main(HOME+"/mydata/","output_dir", args.username, args.password, args.polarization)
+    main(HOME+"/mydata/", args.username, args.password, args.polarization, args.use_existing_data)
