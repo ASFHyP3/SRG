@@ -179,39 +179,39 @@ __global__ void setazoff(double *coef_d, double *azoff_d, int demwidth_d, int nl
 
 
 extern "C" void azimuth_compress_(
-				  float complex *burstdata,
-				  double *satloc,
-				  int *rawdatalines,
-				  int *samplesPerBurst,
-				  int *demwidth,
-				  int *demlength,
-				  int *fdout,
-				  int *fddem,
-				  double *deltalat,
-				  double *deltalon,
-				  double *firstlat,
-				  double *firstlon,
-				  double *latlons,
-				  double *timeorbit,
-				  double *xx,
-				  double *vv,
-				  int *numstatevec,
-				  double *rngstart,
-				  double *rngend,
-				  double *tstart,
-				  double *tend,
-				  double *tmid,
-				  double *xyz_mid,
-				  double *vel_mid,
-				  double *t,
-				  double *dtaz,
-				  double *dmrg,
-				  double *wvl,
-				  int *aperture,
-				  int *iaperture,
-				  double *angc0,
-				  double *angc1,
-				  double *prf)
+  _Complex float *burstdata,
+  double *satloc,
+  int *rawdatalines,
+  int *samplesPerBurst,
+  int *demwidth,
+  int *demlength,
+  int *fdout,
+  int *fddem,
+  double *deltalat,
+  double *deltalon,
+  double *firstlat,
+  double *firstlon,
+  double *latlons,
+  double *timeorbit,
+  double *xx,
+  double *vv,
+  int *numstatevec,
+  double *rngstart,
+  double *rngend,
+  double *tstart,
+  double *tend,
+  double *tmid,
+  double *xyz_mid,
+  double *vel_mid,
+  double *t,
+  double *dtaz,
+  double *dmrg,
+  double *wvl,
+  int *aperture,
+  int *iaperture,
+  double *angc0,
+  double *angc1,
+  double *prf)
 {
 
   // internal variables
@@ -235,7 +235,7 @@ extern "C" void azimuth_compress_(
   int nlines;
   off_t iaddr_off_t;
   size_t iaddr_size_t;
-  float complex *outdata, *indata;
+  _Complex float *outdata, *indata;
 
   // variables for openmp pragma argument passing
 //  int ompdemwidth=*demwidth;
@@ -254,14 +254,14 @@ extern "C" void azimuth_compress_(
 
   // set a gpudevice
   long int getgpu = cudaSetDevice(0);
-//  printf("GPU set return: %d\n",getgpu);
-  if (getgpu != 0){
-     printf("Can't grab GPU %d\n",getgpu);
-     FILE *fgetgpu = NULL;
-     fgetgpu =fopen("getgpulog","a");
-     fprintf(fgetgpu,"Can't grab GPU %d\n",getgpu);
-     fclose(fgetgpu);
-     }    
+  //  printf("GPU set return: %d\n",getgpu);
+  // if (getgpu != 0){
+  //    printf("Can't grab GPU %d\n",getgpu);
+  //    FILE *fgetgpu = NULL;
+  //    fgetgpu =fopen("getgpulog","a");
+  //    fprintf(fgetgpu,"Can't grab GPU %d\n",getgpu);
+  //    fclose(fgetgpu);
+  //    }    
 //  gettimeofday(&t0, NULL);
 //  time1=t0.tv_sec+t0.tv_usec/1.e6;
 //  printf(" grab a gpu time %9.3f\n",time1-time0);
@@ -283,15 +283,15 @@ extern "C" void azimuth_compress_(
   // malloc cpu arrays
   arraysize = (long int) nlines * (long int) *demwidth;
 //  printf("arraysize nlines demwidth: %ld %d %d\n",arraysize, nlines, *demwidth);
-lon = (double *) malloc(*demwidth * sizeof(double));
+  lon = (double *) malloc(*demwidth * sizeof(double));
   demin = (short *) malloc(arraysize * sizeof(short));
 //  azoff = (double *) malloc(arraysize * sizeof(double));
   //  pixeltime = (double *) malloc(*demwidth * sizeof(double));
   // xyz = (double *) malloc(arraysize * sizeof(double) * 3);
   xyzfit = (double *) malloc(nlines * sizeof(double) * 9);
   coef = (double *) malloc(nlines * sizeof(double) * 3);
-  outdata = (float complex *)malloc(arraysize * sizeof(float complex));
-  indata = (float complex *)malloc(arraysize * sizeof(float complex));
+  outdata = (_Complex float *)malloc(arraysize * sizeof(_Complex float));
+  indata = (_Complex float *)malloc(arraysize * sizeof(_Complex float));
 //  printf("bytes for indata outdata %ld\n",arraysize*8);
   
 //  gettimeofday(&t0, NULL);
@@ -310,13 +310,13 @@ lon = (double *) malloc(*demwidth * sizeof(double));
   cuFloatComplex *outdata_d;
   short *demin_d;
 
-  cudaMalloc( (void **)&burstdata_d, sizeof(float complex) * *rawdatalines * *samplesPerBurst);
+  cudaMalloc( (void **)&burstdata_d, sizeof(_Complex float) * *rawdatalines * *samplesPerBurst);
   cudaMalloc( (void **)&satloc_d, sizeof(double) * 3 * *rawdatalines);
   cudaMalloc( (void **)&azoff_d, sizeof(double) * arraysize);
   cudaMalloc( (void **)&xyz_d, sizeof(double) * 3 * arraysize);
   cudaMalloc( (void **)&xyzfit_d, sizeof(double) * 9 * nlines);
   cudaMalloc( (void **)&coef_d, sizeof(double) * 3 * nlines);
-  cudaMalloc( (void **)&outdata_d, sizeof(float complex) * arraysize);
+  cudaMalloc( (void **)&outdata_d, sizeof(_Complex float) * arraysize);
   cudaMalloc( (void **)&demin_d, sizeof(short) * arraysize);
 
 //  gettimeofday(&t0, NULL);
@@ -343,7 +343,7 @@ lon = (double *) malloc(*demwidth * sizeof(double));
 //  time0=t0.tv_sec+t0.tv_usec/1.e6;
 
   //  start setting up shared data arrays in gpu, transfer raw data and satellite locations
-  cudaMemcpy( burstdata_d, burstdata, sizeof(float complex) * *rawdatalines * *samplesPerBurst, cudaMemcpyHostToDevice );
+  cudaMemcpy( burstdata_d, burstdata, sizeof(_Complex float) * *rawdatalines * *samplesPerBurst, cudaMemcpyHostToDevice );
   cudaMemcpy( satloc_d, satloc, sizeof(double) * *rawdatalines * 3, cudaMemcpyHostToDevice );
 
 //  gettimeofday(&t0, NULL);
@@ -365,7 +365,7 @@ lon = (double *) malloc(*demwidth * sizeof(double));
   // zero out data array before integration
   for (int j=0; j<nlines; j++){
     for (i=0;i<*demwidth;i++){
-      outdata[i+j * *demwidth]=0.+0.*I;
+      outdata[i+j * *demwidth]=0.;
     }}
 
 //  gettimeofday(&t0, NULL);
@@ -486,7 +486,7 @@ lon = (double *) malloc(*demwidth * sizeof(double));
 //  gettimeofday(&t0, NULL);
 //  time0=t0.tv_sec+t0.tv_usec/1.e6;
 
-  cudaMemcpy( outdata, outdata_d, sizeof(float complex) * arraysize, cudaMemcpyDeviceToHost );
+  cudaMemcpy( outdata, outdata_d, sizeof(_Complex float) * arraysize, cudaMemcpyDeviceToHost );
 
   // get existing data for that burst
   iaddr_off_t=(long long int) firstline * (long long int) *demwidth * (long long int) 8;
