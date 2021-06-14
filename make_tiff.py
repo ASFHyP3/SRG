@@ -63,7 +63,7 @@ amp = np.sqrt(np.square(band1)+np.square(band2))
 # Create The File
 print("Creating Geotiff Driver...")
 driver = gdal.GetDriverByName("GTiff")
-outdata = driver.Create(filename, WIDTH, FILE_LENGTH, 3, gdal.GDT_Float64)
+outdata = driver.Create(filename, WIDTH, FILE_LENGTH, 1, gdal.GDT_Float64)
 
 # Set The Projection to WGS84 (EPSG: 4326)
 outdata.SetGeoTransform(geotransform)
@@ -71,20 +71,9 @@ srs = osr.SpatialReference()
 srs.ImportFromEPSG(4326)
 outdata.SetProjection(srs.ExportToWkt())
 
-# Write the Data to the Raster Bands
-print("Writing Complex Band...")
-print("Band 1 Shape: ", band1.shape)
-outband = outdata.GetRasterBand(1)
-outband.WriteArray(band1)
-
-print("Writing Real Band...")
-print("Band 2 Shape: ", band2.shape)
-outband = outdata.GetRasterBand(2)
-outband.WriteArray(band2)
-
 print("Writing Amplitude Band...")
-print("Band 3 Shape: ", amp.shape)
-outband = outdata.GetRasterBand(3)
+print("Band 1 Shape: ", amp.shape)
+outband = outdata.GetRasterBand(1)
 outband.WriteArray(amp)
 
 print("Saving...")
