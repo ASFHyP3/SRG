@@ -1,23 +1,16 @@
-name: Test
+name: Test with pytest
 
-on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+on: push
 
 jobs:
-  call-pytest-workflow:
-    # Docs: https://github.com/ASFHyP3/actions
-    uses: ASFHyP3/actions/.github/workflows/reusable-pytest.yml@v0.11.0
-    with:
-      local_package_name: back-projection
+  pytest:
+    runs-on: ubuntu-latest
 
-  call-version-info-workflow:
-    # Docs: https://github.com/ASFHyP3/actions
-    uses: ASFHyP3/actions/.github/workflows/reusable-version-info.yml@v0.11.0
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: mamba-org/provision-with-micromamba@v16
+
+      - shell: bash -l {0}
+        run: |
+          make pytest
