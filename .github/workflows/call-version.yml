@@ -1,17 +1,41 @@
-name: Test
+name: Call version info
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+  workflow_call:
+    inputs:
+      python_version:
+        required: false
+        default: '3.8'
+        type: string
+    outputs:
+      version:
+        value: ${{ jobs.version_info.outputs.version }}
+      version_tag:
+        value: ${{ jobs.version_info.outputs.version_tag }}
+
 
 jobs:
-  call-version-info-workflow:
-    # Docs: https://github.com/ASFHyP3/actions
-    uses: ASFHyP3/actions/.github/workflows/reusable-version-info.yml@v0.11.0
+  version_info:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set_outputs.outputs.version }}
+      version_tag: ${{ steps.set_outputs.outputs.version_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: environment.yml
+          create-args: >-
+            python=${{ inputs.python_version }}
+
+      - name: set outputs
+        id: set_outputs
+        shell: bash -l {0}
+        run: |
+          export SDIST_VERSION=$(python -m setuptools_scm)
+          echo "version=${SDIST_VERSION}" >> $GITHUB_OUTPUT
+          echo "version_tag=${SDIST_VERSION/+/_}" >> $GITHUB_OUTPUT
+          echo "Version number: ${SDIST_VERSION}"
