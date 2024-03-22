@@ -1,43 +1,21 @@
-name: Run pytest
+name: Run tests
 
-on:
-  workflow_call:
-    inputs:
-      local_package_name:
-        required: true
-        type: string
-      python_versions:
-        required: false
-        default: >-
-          ["3.8"]
-        description: JSON string containing the list of python versions to test
-        type: string
-      fail_fast:
-        required: false
-        default: false
-        description: Cancel all in-progress and queued pytest jobs if any job in the matrix fails
-        type: boolean
+on: push
 
 jobs:
   pytest:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: ${{ inputs.fail_fast }}
-      matrix:
-        python_version: ${{ fromJson(inputs.python_versions) }}
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
 
-      - uses: mamba-org/setup-micromamba@v1
+      - uses: actions/setup-python@v5
         with:
-          environment-file: environment.yml
-          create-args: >-
-            python=${{ matrix.python_version }}
+          python-version: 3.9
 
-      - name: Pytest in conda environment
-        shell: bash -l {0}
-        run: |
-          python -m pip install --no-deps .
-          pytest --cov=${{ inputs.local_package_name }}
+      - run: |
+          python -m pip install --upgrade pip
+          make install
+
+      - name: run pytest
+        run: make tests
