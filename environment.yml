@@ -5,3 +5,4 @@ dependencies:
   - python>=3.9
   - pip
   - pytest
+  - pytest-cov
