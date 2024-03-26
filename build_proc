@@ -1,0 +1,96 @@
+cd DEM
+gfortran -o mosaicDEM mosaicDEM.f90
+gfortran -o createspecialdem createspecialdem.f90
+gfortran -o geoid2008_ellipsoid_interpolate geoid2008_ellipsoid_interpolate.f90
+cd ..
+
+cd sentinel
+gfortran -o createslc createslc.f90
+
+gcc -c azimuth_compress_cpu.c -lm -fopenmp
+
+gcc -c filelen.c io.c sentinel_raw_process_cpu.c decode_line_memory.c -lm -fopenmp
+
+gfortran -c processsubcpu.f90 backprojectcpusub.f90 bounds.f90 orbitrangetime.f90 latlon.f90 intp_orbit.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 orbithermite.f sentineltimingsub.f90 getburststatevectors.f90 -ffixed-line-length-none -fopenmp
+
+gcc -o sentinel_raw_process_cpu sentinel_raw_process_cpu.o decode_line_memory.o processsubcpu.o backprojectcpusub.o azimuth_compress_cpu.o bounds.o orbitrangetime.o latlon.o intp_orbit.o radar_to_xyz.o unitvec.o tcnbasis.o curvature.o cross.o orbithermite.o filelen.o io.o sentineltimingsub.o getburststatevectors.o $PROC_HOME/fft/fftw-3.3.9/.libs/libfftw3f.a -lgfortran -lgomp -lm -lrt -lpthread
+
+echo 'built sentinel_raw_process_cpu'
+
+nvcc -o howmanygpus howmanygpus.cu
+
+echo 'built howmanygpus'
+
+cd geo2rdr
+gfortran -o estimatebaseline estimatebaseline.f90 intp_orbit.f90 latlon.f90 orbithermite.f -ffixed-line-length-none
+
+echo 'finished with sentinel directory'
+
+cd ../..
+cd util
+gcc -c io.c
+gfortran -o nbymi2 nbymi2.f io.o
+gfortran -c lsq.f90
+gfortran -o regressheight regressheight.f90 lsq.o
+
+echo 'finished with util directory'
+
+cd ..
+cd int
+gfortran -o findrefpoints findrefpoints.f90
+gfortran -o refpointsfromsim refpointsfromsim.f90
+
+echo 'built findrefpoints'
+
+gcc -c ../util/filelen.c
+
+echo 'compiled filelen'
+
+gfortran -o crossmul crossmul.f90 filelen.o $PROC_HOME/fft/fftw-3.3.9/.libs/libfftw3f.a -fopenmp -lrt -lpthread
+
+echo 'built crossmul'
+
+gfortran -o makecc makecc.f90 filelen.o -fopenmp -lrt -lpthread
+
+echo 'finished with int directory'
+
+cd ..
+cd sbas
+gfortran -o sbas sbas.f90 svd.f90 -fopenmp -lrt -lpthread
+echo 'built sbas in sbas directory'
+
+cd ..
+cd ps
+gfortran -o cosine_sim cosine_sim.f90 -fopenmp $PROC_HOME/fft/fftw-3.3.9/.libs/libfftw3f.a
+gfortran -o psinterp psinterp.f90 -fopenmp
+echo 'Built cosine_sim and psinterp in ps directory'
+
+cd ..
+tar xf snaphu_v2_0b0_0_0.tar
+cd snaphu_v2.0b0.0.0/src
+make CFLAGS=-O3 -s
+
+cd ..
+if [ -e $PROC_HOME/bin ]; then echo "copying snaphu"; else mkdir $PROC_HOME/bin; fi
+cp bin/snaphu $PROC_HOME/bin/snaphu
+cd ..
+
+echo 'built snaphu'
+
+nvcc -o gpu_arch gpu_arch.cu
+echo 'built gpu architecture probe'
+
+./gpu_arch | cat > GPU_ARCH; source ./GPU_ARCH; rm GPU_ARCH
+
+cd sentinel
+
+gcc -c filelen.c io.c sentinel_raw_process.c decode_line_memory.c -lm -fopenmp
+
+echo 'built raw_process components in sentinel'
+
+nvcc -gencode arch=compute_$GPU_ARCH,code=sm_$GPU_ARCH -c azimuth_compress.cu -Wno-deprecated-gpu-targets
+
+gfortran -c processsub.f90 backprojectgpusub.f90 bounds.f90 orbitrangetime.f90 latlon.f90 intp_orbit.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 orbithermite.f sentineltimingsub.f90 getburststatevectors.f90 -ffixed-line-length-none -fopenmp
+
+nvcc -o sentinel_raw_process sentinel_raw_process.o decode_line_memory.o processsub.o backprojectgpusub.o azimuth_compress.o bounds.o orbitrangetime.o latlon.o intp_orbit.o radar_to_xyz.o unitvec.o tcnbasis.o curvature.o cross.o orbithermite.o filelen.o io.o sentineltimingsub.o getburststatevectors.o $PROC_HOME/fft/fftw-3.3.9/.libs/libfftw3f.a -lstdc++ -lgfortran -lgomp
+cd ..
