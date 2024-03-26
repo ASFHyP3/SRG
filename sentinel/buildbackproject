@@ -1,3 +1,0 @@
-gcc -c filelen.c io.c sql_f90.c
-
-gfortran -o backproject backproject.f90 sql_mod.f90 bounds.f90 orbitrangetime.f90 latlon.f90 intp_orbit.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 orbithermite.f filelen.o sql_f90.o io.o -lfftw3f -lsqlite3 -fopenmp

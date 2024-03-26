@@ -1,1 +1,0 @@
-gfortran -o rilooks rilooks.f90 filelen.o -fopenmp
