@@ -6,8 +6,6 @@ import sys
 import os
 import subprocess
 
-HOME = os.environ['PROC_HOME']
-
 if len(sys.argv) < 3:
     print ('Usage: sentinel_scene_cpu.py SAFEname orbitfile(*EOF) <vv or vh (def. vv)>')
 
@@ -40,7 +38,7 @@ basename=str(datfile[0:len(datfile)-5],'UTF-8')
 #basename=str(basename)
 #basename=basename.lstrip('b')
 # read the orbitfile statevectors, store in orbtiming.full
-command = HOME+'/sentinel/orbitstatevectors.py '+orbitfile
+command = '$PROC_HOME/sentinel/orbitstatevectors.py '+orbitfile+' '+SAFEname
 print (command)
 ret=os.system(command)
 
@@ -52,24 +50,24 @@ words=fe.readline()
 demlength=words.split()[1]
 fe.close()
 #print demwidth, demlength
-command = HOME+'/sentinel/createslc '+demwidth+' '+demlength
+command = '$PROC_HOME/sentinel/createslc '+demwidth+' '+demlength+' '+SAFEname+'.geo'
 print (command)
 ret=os.system(command)
 
 #  process the scene, three swaths
-command = HOME+'/sentinel/sentinel_raw_process_cpu '+basename
+command = '$PROC_HOME/sentinel//sentinel_raw_process_cpu '+basename
 print (command)
 ret=os.system(command)
 
 #  save slc file
-command = 'mv slc '+SAFEname+'.geo'
-print (command)
-ret=os.system(command)
+#command = 'mv slc '+SAFEname+'.geo'
+#print (command)
+#ret=os.system(command)
 
 #  and save precise_orbtiming file for later use
-command = 'cp precise_orbtiming '+SAFEname+'.orbtiming'
-print (command)
-ret=os.system(command)
+#command = 'cp precise_orbtiming '+SAFEname+'.orbtiming'
+#print (command)
+#ret=os.system(command)
 
 sys.exit(0)
 

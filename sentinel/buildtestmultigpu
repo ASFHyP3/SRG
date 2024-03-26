@@ -1,1 +1,0 @@
-nvcc -Xcompiler -fopenmp -o testmultigpu testmultigpu.cu

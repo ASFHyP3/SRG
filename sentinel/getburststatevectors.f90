@@ -1,11 +1,17 @@
-subroutine getburststatevectors(startime)
+subroutine getburststatevectors(startime,SAFEname)
 
   implicit none
-  integer i, j, itemp, nvect, ifirst
+  integer i, j, itemp, nvect, ifirst, isafe
+  character*200 SAFEname
   real*8 startime
   real*8 time(10000),xx(3,10000),vv(3,10000),aa(3,10000)
+
+  ! SAFEname limits in string
+  do isafe=1,len_trim(SAFEname)
+     if(ichar(SAFEname(isafe:isafe)).eq.0)exit
+  end do
   
-  open(21,file='orbtiming.full')
+  open(21,file=SAFEname(1:isafe-1)//'.orbtiming.full')
   read(21,*)itemp
   read(21,*)itemp
   read(21,*)itemp
@@ -30,7 +36,7 @@ subroutine getburststatevectors(startime)
 !  print *,time(ifirst-1),time(ifirst),ifirst
   
   !  open output file
-  open(22,file='precise_orbtiming')
+  open(22,file=SAFEname(1:isafe-1)//'.orbtiming')
   write(22,*)0
   write(22,*)0
   write(22,*)0

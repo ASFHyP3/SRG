@@ -1,1 +1,0 @@
-nvcc -gencode  arch=compute_70,code=sm_70 -c azimuth_compress.cu -Wno-deprecated-gpu-targets

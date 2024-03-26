@@ -24,9 +24,9 @@ if len(sys.argv) > 4:
     thresh = sys.argv[4]
 
 # determine some reference point locations
-command = '$PROC_HOME/int/findrefpoints unwlist '+unwwidth+' '+unwlength+' '+thresh
-print (command)
-ret = os.system(command)
+#command = '$PROC_HOME/int/findrefpoints unwlist '+unwwidth+' '+unwlength+' '+thresh
+#print (command)
+#ret = os.system(command)
 
 # regress vs hgt to remove tropo
 

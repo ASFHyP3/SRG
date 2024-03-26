@@ -1,3 +1,0 @@
-nvcc -Xcompiler -fopenmp -c getarch.cu -Wno-deprecated-gpu-targets 
-
-gfortran -o testgetarch -L /usr/local/cuda/lib64 -I /usr/local/cuda/include -lcudart -lcuda testgetarch.f90 getarch.o -fopenmp -lgomp -lstdc++

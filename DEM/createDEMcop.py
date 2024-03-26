@@ -65,7 +65,7 @@ for i in range(lat-y,lat):
     for j in range(long,long+x):
         #print ('tile: ',i,j)
         command = '$PROC_HOME/DEM/cop_dem.py '+str(i)+' '+str(j)
-        #print (command)
+        print (command)
         ret=os.system(command)
 
 # scan the rsc files for width, xstep parameters
@@ -87,32 +87,36 @@ for i in range(lat-y,lat):
         rsclist.append(demfile.replace('.dem','.dem.rsc').rstrip())
         #print ('Looking for ',rsclist[k])
         if os.path.exists(rsclist[k]):
-            #print ('found')
-            file=open(rsclist[k],'r')
-            strings=file.readlines()
-            file.close()
-            widthstr=strings[0].split()
-            xstepstr=strings[4].split()
-            ystepstr=strings[5].split()
-            heightstr=strings[1].split()
-            xwidth.append(widthstr[1])
-            xstep.append(xstepstr[1])
-            widthmin=min(widthmin,int(widthstr[1]))
-            xstepmax=max(xstepmax,float(xstepstr[1]))
-            widthmax=max(widthmax,int(widthstr[1]))
-            xstepmin=min(xstepmin,float(xstepstr[1]))
-            frsc.write(demfile+'\n')
-            frsc.write(widthstr[1]+'\n')
-            frsc.write(heightstr[1]+'\n')
-            frsc.write(xstepstr[1]+'\n')
-            frsc.write(ystepstr[1]+'\n')
-        else:
-            #print ('not found')
-            frsc.write('no_file\n')
-            frsc.write('0\n')
-            frsc.write('0\n')
-            frsc.write('0\n')
-            frsc.write('0\n')
+            if os.path.getsize(rsclist[k]) < 1000:
+#                print ('found',rsclist[k],os.path.getsize(rsclist[k]))
+                file=open(rsclist[k],'r')
+                strings=file.readlines()
+                file.close()
+                widthstr=strings[0].split()
+                xstepstr=strings[4].split()
+                ystepstr=strings[5].split()
+                heightstr=strings[1].split()
+                xwidth.append(widthstr[1])
+                xstep.append(xstepstr[1])
+                print(demfile,widthstr)
+                widthmin=min(widthmin,int(widthstr[1]))
+                xstepmax=max(xstepmax,float(xstepstr[1]))
+                widthmax=max(widthmax,int(widthstr[1]))
+                xstepmin=min(xstepmin,float(xstepstr[1]))
+                frsc.write(demfile+'\n')
+                frsc.write(widthstr[1]+'\n')
+                frsc.write(heightstr[1]+'\n')
+                frsc.write(xstepstr[1]+'\n')
+                frsc.write(ystepstr[1]+'\n')
+
+            else:
+#                print ('not found',rsclist[k])
+                frsc.write('no_file\n')
+                frsc.write('0\n')
+                frsc.write('0\n')
+                frsc.write('0\n')
+                frsc.write('0\n')
+                ret=os.system('touch '+rsclist[k])
         k=k+1
 
 frsc.close()                
@@ -162,8 +166,21 @@ command = '$PROC_HOME/DEM/createspecialdem updem updem.rsc '+outdemfile+' '+outd
 print (command)
 ret = os.system(command)
 
+# convert geoid-based dem to ellipsoid
+command='mv '+outdemfile+' '+outdemfile+'.geoid'
+print (command)
+ret=os.system(command)
+command='mv '+outdemrscfile+' '+outdemrscfile+'.geoid'
+print (command)
+ret=os.system(command)
+
+
+command='$PROC_HOME/DEM/geoid2008_ellipsoid_interpolate '+outdemfile+'.geoid '+outdemrscfile+'.geoid '+outdemfile+' '+outdemrscfile+' $PROC_HOME/DEM/egm2008_geoid_grid'
+print (command)
+ret=os.system(command)
+
 #  clean up
-command='rm updem updem.rsc'
+command='rm updem updem.rsc Copernicus_DSM_COG*'
 ret=os.system(command)
 
 

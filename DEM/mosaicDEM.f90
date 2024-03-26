@@ -40,7 +40,7 @@ PROGRAM mosaicDEM   ! version for non-repeated-line copernicus files
   heightmin=1000000
   heightmax=0
   do i=1,nfiles
-     READ(1,'(A)')demfiles(i)
+     READ(1,'(A)',end=20)demfiles(i)
      read(1,*)width(i)
      read(1,*)length(i)
      read(1,*)xspacing(i)
@@ -49,6 +49,7 @@ PROGRAM mosaicDEM   ! version for non-repeated-line copernicus files
      widthmax=max(widthmax,width(i))
      heightmin=min(heightmin,length(i))
      heightmax=max(heightmax,length(i))
+20   continue
  !    xspacingmax=max(xspacingmax,xspacing(i))
   end do
   CLOSE(1)
@@ -84,7 +85,8 @@ PROGRAM mosaicDEM   ! version for non-repeated-line copernicus files
      !  read in a row, since width is only latitude dependent
      !  note that demfiles.txt was bottom to top, and we want to write top to bottom
      do i=1,nhoriz
-        open(21,file=demfiles(i+jreverse*nhoriz),access='stream')
+        open(21,file=trim(demfiles(i+jreverse*nhoriz)),access='stream')
+!        print *,'opened ',trim(demfiles(i+jreverse*nhoriz))
         read(21,end=10)dat
 !        print *,'dem file found, i,j,jreverse: ',trim(demfiles(i+jreverse*nhoriz)),i,j,jreverse
 !        print *,' sum ',sum(dat)

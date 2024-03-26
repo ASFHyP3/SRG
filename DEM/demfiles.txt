@@ -1,4 +1,0 @@
-Copernicus_DSM_COG_10_N35_00_W119_00_DEM.dem
-Copernicus_DSM_COG_10_N35_00_W118_00_DEM.dem
-Copernicus_DSM_COG_10_N35_00_W117_00_DEM.dem
-Copernicus_DSM_COG_10_N35_00_W116_00_DEM.dem

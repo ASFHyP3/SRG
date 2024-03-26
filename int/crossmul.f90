@@ -1,15 +1,19 @@
 !c  crossmul - cross multiply two files, one conjugated, form int and amp file
+!
+!  9 may 21: add ability to mask zero pixels in original images
+!
 
       use omp_lib
 
       complex*8, allocatable:: in1(:,:),in2(:,:),igram(:,:),amp(:,:)
       complex*8, allocatable:: up1(:,:),up2(:,:),inline1(:),inline2(:)
       complex*8, allocatable:: igramacc(:),ampacc(:),igramtemp(:),amptemp(:)
-      complex*8, allocatable :: temp(:),temp2(:,:)
-      complex*8 :: data(32768),ref(32768)
+      complex*8, allocatable :: temp(:),temp2(:,:), masksum(:)
+      complex*8 :: data(32768),ref(32768), maskflag
       character*300 fin1,fin2,str,figram,famp
+      character*1 maskyn
+      integer, allocatable :: mask1flag(:),mask2flag(:),mask(:)
       integer*8 nbytes,filelen
-
       real*4, allocatable :: plannnnf(:),plannnni(:)  ! for fft upsampling
       integer*8 iplannnnf,iplannnni
 
@@ -19,7 +23,8 @@
       print *, 'Max threads used: ', n
 
       if(iargc().lt.5)then
-         write(*,*)'usage: crossmul infile1 infile2 outintfile outampfile length <valid_lines> <scale=1> <looksac> <looksdn>'
+         write(*,*)'usage: crossmul infile1 infile2 outintfile outampfile length ', &
+              '<valid_lines> <scale=1> <looksac> <looksdn> <mask y/n = y>'
          print *,'scale is multiplied by each scene to prevent overflow'
          stop
       end if
@@ -38,8 +43,9 @@
          read(str,*)looksdn
       end if
       open(21,file=fin1,form='unformatted',access='direct',recl=na*8*looksdn)
-      nbytes=filelen(trim(fin1))
+      nbytes=filelen(fin1)
       nd=nbytes/8/na
+      print *,'nbytes nd ',nbytes,nd
       call getarg(2,fin2)
       if(trim(fin1).ne.trim(fin2))then
          open(22,file=fin2,form='unformatted',access='direct',recl=na*8*looksdn)
@@ -57,7 +63,10 @@
          read(str,*)scale
       end if
       write(*,*)'Lines in file: ',nd,', interferogram width: ',na/looksac
-
+      maskyn='y'
+      if(iargc().ge.10)then
+         call getarg(10,maskyn)
+      end if
 !c  get ffts lengths for upsampling
       do i=1,24
          nnn=2**i
@@ -75,8 +84,9 @@
 
       !$omp parallel do private(in1,in2,up1,up2,inline1,inline2,igram,amp,temp,temp2) &
       !$omp private(igramacc,ampacc,igramtemp,amptemp,j,k,i,line,plannnnf,plannnni) &
+      !$omp private(mask1flag,mask2flag,mask,maskflag,masksum) &
       !$omp shared(nvalid,looksdn,scale,na,nnn,iplannnnf,iplannnni) &
-      !$omp shared(looksac,fin1,fin2)
+      !$omp shared(looksac,fin1,fin2,maskyn)
 
       do line=1,nvalid/looksdn
          if(mod(line,1000).eq.0)print *,line
@@ -84,7 +94,8 @@
          allocate (in1(na,looksdn),in2(na,looksdn),igram(na*2,looksdn),amp(na*2,looksdn))
          allocate (igramacc(na),ampacc(na),igramtemp(na/looksac),amptemp(na/looksac))
          allocate (up1(nnn*2,looksdn), up2(nnn*2,looksdn), inline1(nnn), inline2(nnn))
-         allocate (temp(nnn),temp2(nnn*2,looksdn))!,plannnnf(nnn*4+15),plannnni(nnn*2*4+15))
+         allocate (masksum(na),mask1flag(na/looksac),mask2flag(na/looksac),mask(na/looksac))
+         allocate (temp(nnn),temp2(nnn*2,looksdn))
 
 !c     read in lines
          read(21,rec=line,err=98)in1
@@ -94,6 +105,27 @@
             in2=in1
          end if
 98       continue
+         ! create masks if asked
+         if (maskyn.eq.'y')then
+            mask1flag=1
+            mask2flag=1
+            masksum=sum(in1,2)
+            do i=1,na/looksac
+               maskflag=sum(masksum((i-1)*looksac+1:i*looksac))
+               if(abs(maskflag).le.1.e-6)mask1flag(i)=0
+            end do
+            masksum=sum(in2,2)
+            do i=1,na/looksac
+               maskflag=sum(masksum((i-1)*looksac+1:i*looksac))
+               if(abs(maskflag).le.1.e-6)mask2flag(i)=0
+            end do
+            mask=mask1flag*mask2flag
+!            if(line.eq.500)then
+!               print *,mask1flag
+!               print *,mask2flag
+!               print *,mask
+!            end if
+         end if
 !c     cross-multiply and save amplitudes
          in1=in1*scale
          in2=in2*scale
@@ -147,12 +179,23 @@
             amptemp(j+1)=cmplx(sqrt(real(amptemp(j+1))),sqrt(aimag(amptemp(j+1))))
          end do
 
+         ! multiply by mask if desired
+         if (maskyn.eq.'y')then
+!            if(line.eq.500)print *,igramtemp
+            do j=1,na/looksac
+               if(mask(j).eq.0)then
+                  igramtemp(j)=0.
+                  amptemp(j)=0.
+               end if
+            end do
+!            if(line.eq.500)print *,igramtemp
+         end if
          write(32,rec=line)igramtemp
          write(33,rec=line)amptemp
  99   continue
 
          deallocate (in1, in2, up1, up2, igramtemp, amptemp, igramacc, ampacc)
-         deallocate (inline1, inline2, igram, amp, temp, temp2)
+         deallocate (inline1, inline2, igram, amp, temp, temp2, mask, masksum, mask1flag, mask2flag)
       end do
       !$omp end parallel do
 

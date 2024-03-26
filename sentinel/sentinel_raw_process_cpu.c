@@ -18,7 +18,7 @@
 
 // some declarations
 void decode_line(unsigned char *data, int nq, int packetDataLength, float *samples, int linenum);
-void processsubcpu_(unsigned char *raw1,long long int *nbytes);
+void processsubcpu_(unsigned char *raw1,long long int *nbytes, char *SAFEname, int *sw);
   
 // several functions used in this code
 int int2(unsigned char *data){
@@ -129,7 +129,8 @@ int main (int argc, char *argv[]) {
   struct stat sb;
   char fname[200];
   char basename[200];
-  char *charerr;
+  char SAFEname[200];
+  char *charerr, *p;
 
   if(argc<2){
     fprintf(stderr,"usage: %s base_filename (without .dat)\n",
@@ -144,6 +145,11 @@ int main (int argc, char *argv[]) {
   charerr = strcpy(basename,argv[1]);
   charerr=strcpy(fname,basename);
 
+  // extract SAFEname
+  p = strstr(basename,"SAFE");
+  charerr = strncpy(SAFEname,basename,p-basename-1);
+  printf("SAFEname is %s\n",SAFEname);
+  
   // annot.dat file -- we apparently need this as the actuakl times are not in the measurement file
   charerr = strcat(fname,"-annot.dat");
 
@@ -256,7 +262,7 @@ int main (int argc, char *argv[]) {
     unsigned char *outline;
     outline = (unsigned char *)malloc(8*30000*sizeof(unsigned char));
  
-    if(i%2000==0)printf("decoding line %d\n",i);
+    if(i%5000==0)printf("decoding line %d\n",i);
     // read header info for line
     memcpy(data,&map[iptr[i]],68);  // retrieve packet length, etc.
     packetDataLength=int2(&data[4])+1;
@@ -307,18 +313,21 @@ int main (int argc, char *argv[]) {
   //  fclose(fdout3);
 
   long long int nbytes;
+  int sw;
   nbytes=(long long int)nswath[0]*(long long int)30000*8;
-  printf("calling processub bytes %lld\n",nbytes);
-  processsubcpu_(raw1,&nbytes);
+  sw=0;
+  printf("calling processub bytes %lld for swath %d\n",nbytes,sw);
+  processsubcpu_(raw1,&nbytes,SAFEname,&sw);
   free(raw1);
   nbytes=(long long int)nswath[1]*(long long int)30000*8;
-  printf("calling processub bytes %lld\n",nbytes);
-  processsubcpu_(raw2,&nbytes);
+  sw=1;
+  printf("calling processub bytes %lld for swath %d\n",nbytes,sw);
+  processsubcpu_(raw2,&nbytes,SAFEname,&sw);
   free(raw2);
   nbytes=(long long int)nswath[2]*(long long int)30000*8;
-  printf("calling processub bytes %lld\n",nbytes);
-  processsubcpu_(raw3,&nbytes);
+  sw=2;
+  printf("calling processub bytes %lld for swath %d\n",nbytes,sw);
+  processsubcpu_(raw3,&nbytes,SAFEname,&sw);
   free(raw3);
-  
 }
 
