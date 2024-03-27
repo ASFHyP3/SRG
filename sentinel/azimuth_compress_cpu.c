@@ -112,10 +112,14 @@ void setxyz(short *demin_d, double *xyz_d, double *xyzfit_d, double *azoff_d, in
     line = (int) (loop / demwidth_d);
     pixel = loop - line * demwidth_d;
     lat = firstlat_d + (line + firstline_d) * deltalat_d;
+    xyzoffset = ((long long int) line * (long long int) demwidth_d + (long long int) pixel ) * (long long int) 3;
+    xyz_d[xyzoffset+0]=0.;
+    xyz_d[xyzoffset+1]=0.;
+    xyz_d[xyzoffset+2]=0.;
 
     if (pixel >= firstpix_d && pixel <= lastpix_d){
 
-      xyzoffset = ((long long int) line * (long long int) demwidth_d + (long long int) pixel ) * (long long int) 3;
+
 
       llhlat = lat * deg2rad;
       llhlon = (firstlon_d + pixel * deltalon_d) * deg2rad;
@@ -219,6 +223,7 @@ extern void azimuth_compress_cpu_(
   int firstline, lastline;  // limits on line loop
   int firstpix, lastpix;  // limits on pixel loop
   long int arraysize;
+  FILE *fpout;  // stream for file descriptor *fdout
 
   int naperture; // naperture is integration midpoint in pixels
   int y1,y2,y3;
@@ -262,12 +267,12 @@ extern void azimuth_compress_cpu_(
   indata = (float complex *)malloc(arraysize * sizeof(float complex));
   
   // cpu array definitions
-  _Complex float *burstdata_d;
+  //  _Complex float *burstdata_d;
   double *satloc_d;
   double *azoff_d, *xyz_d;
   double *xyzfit_d;
   double *coef_d;
-  _Complex float *outdata_d;
+  //  _Complex float *outdata_d;
   short *demin_d;
 
   // constants and such
@@ -287,6 +292,7 @@ extern void azimuth_compress_cpu_(
   for (j=0; j<nlines; j++){
     for (i=0;i<*demwidth;i++){
       outdata[i+j * *demwidth]=0.+0.*I;
+      indata[i+j * *demwidth]=0.+0.*I;
     }}
 
   //  process full burst, begin by grabbing proper section of DEM
@@ -370,8 +376,9 @@ extern void azimuth_compress_cpu_(
   iaddr_size_t= arraysize * 8;
   //  printf("offset size %lld %lld\n",iaddr_off_t, iaddr_size_t);
 
-  nbytes=lseek(*fdout, iaddr_off_t, SEEK_SET);
-  nbytes=read(*fdout,indata,iaddr_size_t);
+  fpout = fdopen(*fdout,"r+");
+  nbytes=fseek(fpout, iaddr_off_t, SEEK_SET);
+  nbytes=fread(indata, 1, iaddr_size_t, fpout);
   //  printf("bytes read %ld\n",nbytes);
 
   // update if pixel computed
@@ -381,8 +388,8 @@ extern void azimuth_compress_cpu_(
     }
   }
   // write line to file
-  nbytes=lseek(*fdout, iaddr_off_t, SEEK_SET);
-  nbytes=write(*fdout,indata,iaddr_size_t);
+  nbytes=fseek(fpout, iaddr_off_t, SEEK_SET);
+  nbytes=fwrite(indata, 1, iaddr_size_t, fpout);
 
   // free up cpu memory
   free(indata);

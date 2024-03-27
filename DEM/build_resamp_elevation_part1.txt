@@ -1,3 +1,0 @@
-gcc -c sql_f90.c
-gfortran -c sql_mod.f90
-gfortran -ffixed-line-length-none -o resamp_elevation_part1 sql_mod.o sql_f90.o resamp_elevation_part1.f90 radar_to_xyz.f90 latlon.f90 curvature.f90 convert_sch_to_xyz.f90 matvec.f90 lincomb.f90 derivatives.f90 unitvec.f90 dot.f90 get_tpsch.f90 schbasis.f90 matmat.f90 tranmat.f90 dop_derivatives.f90 dotsch.f90 -lsqlite3

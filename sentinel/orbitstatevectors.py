@@ -30,11 +30,14 @@ def timeinseconds(timestring):
     return secs
 
 if len(sys.argv) < 2:
-    print ('Usage: precise_orbit_burst.py preciseorbitfile')
+    print ('Usage: orbitstatevectors.py preciseorbitfile <SAFEname=null>')
     sys.exit(1)
 
 orbitfile=sys.argv[1]
-
+SAFEname=''
+if len(sys.argv) >=2:
+    SAFEname=sys.argv[2]
+    
 # read the precise file
 xmlfile=open(orbitfile,'r')
 xmllines=xmlfile.readlines()
@@ -69,7 +72,7 @@ for i in range(len(start)):
     vy.append(readxmlparam(statelines,'VY unit'))
     vz.append(readxmlparam(statelines,'VZ unit'))
     
-orbinfo=open('orbtiming.full','w')
+orbinfo=open(SAFEname+'.orbtiming.full','w')
 orbinfo.write('0 \n')
 orbinfo.write('0 \n')
 orbinfo.write('0 \n')

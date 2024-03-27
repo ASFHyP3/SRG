@@ -18,7 +18,7 @@
 
 // some declarations
 void decode_line(unsigned char *data, int nq, int packetDataLength, float *samples, int linenum);
-void processsub_(unsigned char *raw1,long long int *nbytes);
+void processsub_(unsigned char *raw1,long long int *nbytes, char *SAFEname, int *sw);
   
 // several functions used in this code
 int int2(unsigned char *data){
@@ -129,7 +129,8 @@ int main (int argc, char *argv[]) {
   struct stat sb;
   char fname[200];
   char basename[200];
-  char *charerr;
+  char SAFEname[200];
+  char *charerr, *p;
 
   if(argc<2){
     fprintf(stderr,"usage: %s base_filename (without .dat)\n",
@@ -144,6 +145,12 @@ int main (int argc, char *argv[]) {
   charerr = strcpy(basename,argv[1]);
   charerr=strcpy(fname,basename);
 
+  // extract SAFEname
+  p = strstr(basename,"SAFE");
+  charerr = strncpy(SAFEname,basename,p-basename-1);
+  printf("SAFEname is %s\n",SAFEname);
+  //  printf("strloc %d %d %d\n",*basename,*strstr(basename,"SAFE"),p-basename);
+  
   // annot.dat file -- we apparently need this as the actuakl times are not in the measurement file
   charerr = strcat(fname,"-annot.dat");
 
@@ -192,16 +199,16 @@ int main (int argc, char *argv[]) {
   printf("Input file size, bytes: %lld\n",filesize);
 
   // read input file to memory
-  map = (unsigned char *)malloc(filesize);
+  map = (unsigned char *)calloc(filesize,sizeof(unsigned char));
   fd=fopen(fname,"r");
   fread(map,1,filesize,fd);
   fclose(fd);
     
   // allocate memory for raw data pointers
-  iptr = (long long *)malloc((recs+1)*sizeof(long long));
-  line10 = (long *)malloc((recs+1)*sizeof(long));
-  line11 = (long *)malloc((recs+1)*sizeof(long));
-  line12 = (long *)malloc((recs+1)*sizeof(long));
+  iptr = (long long *)calloc((recs+1),sizeof(long long));
+  line10 = (long *)calloc((recs+1),sizeof(long));
+  line11 = (long *)calloc((recs+1),sizeof(long));
+  line12 = (long *)calloc((recs+1),sizeof(long));
 
   // scan for line pointers
   nswath[0]=0;nswath[1]=0;nswath[2]=0;
@@ -242,21 +249,21 @@ int main (int argc, char *argv[]) {
     //    printf("lines in raw files %d %d %d\n",line10[recs-1],line11[recs-1],line12[recs-1]);
     // allocate raw file memory areas
     unsigned char *raw1, *raw2, *raw3;
-    raw1=(unsigned char *)malloc((long long int)nswath[0]*(long long int)240000*sizeof(unsigned char));
-    raw2=(unsigned char *)malloc((long long int)nswath[1]*(long long int)240000*sizeof(unsigned char));
-    raw3=(unsigned char *)malloc((long long int)nswath[2]*(long long int)240000*sizeof(unsigned char));
+    raw1=(unsigned char *)calloc((long long int)nswath[0]*(long long int)240000,sizeof(unsigned char));
+    raw2=(unsigned char *)calloc((long long int)nswath[1]*(long long int)240000,sizeof(unsigned char));
+    raw3=(unsigned char *)calloc((long long int)nswath[2]*(long long int)240000,sizeof(unsigned char));
     
 #pragma omp parallel for shared(recs,iptr,map,times,zeros,line10,line11,line12,raw1,raw2,raw3) private(packetDataLength,sigtyp,swath,nq,j,time)
   for (i=0;i<recs;i++){
     // local arrays for omp loop
     unsigned char *data;
-    data = (unsigned char *)malloc(100000*sizeof(unsigned char));
+    data = (unsigned char *)calloc(100000,sizeof(unsigned char));
     float *cpxsamps;
-    cpxsamps = (float *)malloc(65536*sizeof(float));
+    cpxsamps = (float *)calloc(65536,sizeof(float));
     unsigned char *outline;
-    outline = (unsigned char *)malloc(8*30000*sizeof(unsigned char));
+    outline = (unsigned char *)calloc(8*30000,sizeof(unsigned char));
  
-    if(i%2000==0)printf("decoding line %d\n",i);
+    if(i%10000==0)printf("decoding line %d\n",i);
     // read header info for line
     memcpy(data,&map[iptr[i]],68);  // retrieve packet length, etc.
     packetDataLength=int2(&data[4])+1;
@@ -307,17 +314,21 @@ int main (int argc, char *argv[]) {
   //  fclose(fdout3);
 
   long long int nbytes;
+  int sw;
   nbytes=(long long int)nswath[0]*(long long int)30000*8;
-  printf("calling processub bytes %lld\n",nbytes);
-  processsub_(raw1,&nbytes);
+  sw=0;
+  printf("calling processub bytes %lld for swath %d\n",nbytes,sw);
+  processsub_(raw1,&nbytes,SAFEname,&sw);
   free(raw1);
   nbytes=(long long int)nswath[1]*(long long int)30000*8;
-  printf("calling processub bytes %lld\n",nbytes);
-  processsub_(raw2,&nbytes);
+  sw=1;
+  printf("calling processub bytes %lld for swath %d\n",nbytes,sw);
+  processsub_(raw2,&nbytes,SAFEname,&sw);
   free(raw2);
   nbytes=(long long int)nswath[2]*(long long int)30000*8;
-  printf("calling processub bytes %lld\n",nbytes);
-  processsub_(raw3,&nbytes);
+  sw=2;
+  printf("calling processub bytes %lld for swath %d\n",nbytes,sw);
+  processsub_(raw3,&nbytes,SAFEname,&sw);
   free(raw3);
   
 }

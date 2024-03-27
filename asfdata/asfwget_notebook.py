@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 #
 #  asfwget - download set of asf raw sentinel products
@@ -10,6 +10,8 @@
 import os
 import sys
 import subprocess
+
+npar=32 # number to download in parallel
 
 if len(sys.argv) < 2:
     print ("usage: asfwget_notebook.py scenelist\n","  scenelist contains granule names starting with S1(A,B)")
@@ -42,6 +44,9 @@ for scene in scenelist:
 #        command.append(subprocess.Popen(['wget','-qN','--user='+username,'--password='+password,'https://datapool.asf.alaska.edu/RAW/S'+AB+'/'+scene.replace('-RAW','').rstrip()+'.zip','--show-progress']))
         command.append(subprocess.Popen(['wget','-qN','--user='+username,'--password='+password,'https://datapool.asf.alaska.edu/RAW/S'+AB+'/'+scene.replace('-RAW','').rstrip()+'.zip']))
         num=num+1
+        if num % npar == 0:
+            for i in range(num-npar,num):
+                command[i].wait()
 
 for i in range(num):
     command[i].wait()

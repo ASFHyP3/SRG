@@ -40,7 +40,7 @@ for i in range(len(geofiles)):
     #  date from a geo file
     geofile0=str(geofiles[i],'UTF-8')
     date0=geofile0[geofile0.find('V_')+2:geofile0.find('V_')+10]
-    print ('date0 ',date0,date0[3:5])
+    #print ('date0 ',date0,date0[3:5])
     if date0[3:5] == 'IW':
 #        print ('invalid date')
         pol='H'
@@ -50,7 +50,7 @@ for i in range(len(geofiles)):
     if date0[3:5] == 'IW':
 #        print ('invalid date')
         pol='V'
-    print ('file, polarization ',geofile0,pol)
+    #print ('file, polarization ',geofile0,pol)
 
 # make a list with all geo slc dates
 command = 'ls -1 *.geo'
@@ -58,7 +58,7 @@ proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 (geolist, err) = proc.communicate()
 geofiles = geolist.split()
 geofiles.sort()  # put in alphabetical order
-print ('Number of files: ',len(geofiles))
+#print ('Number of files: ',len(geofiles))
 datelist=[]
 dategeo=[]
 for i in range(len(geofiles)):
@@ -76,7 +76,7 @@ for i in range(len(geofiles)):
 # create a new list with all geos for a date
 for i in range(len(datelist)):
     indices = [j for j, x in enumerate(dategeo) if x == datelist[i]]
-    print ('indices ',indices,len(indices))
+    #print ('indices ',indices,len(indices))
     
     # if list has multiple entries start the merge operation
     if len(indices) > 1:
@@ -86,7 +86,7 @@ for i in range(len(datelist)):
             #geostring1=str(geofiles[indices[j]],'UTF-8')
             geostring2=str(geofiles[indices[j+1]],'UTF-8')
             geostringout=geostringin[0:33]+geostring2[33:]
-            print ('merge ',geostringin,geostring2,geostringout)
+            #print ('merge ',geostringin,geostring2,geostringout)
             command = '$PROC_HOME/util/mergeslcs '+geostringin+' '+geostring2+' '+geostringout+' '+demwidth+' '+demlength
             print (command)
             ret =os.system(command)
@@ -99,43 +99,13 @@ for i in range(len(datelist)):
             ret = os.system(command)
             command = 'mv '+geostring2+' orig_geos'
             ret = os.system(command)
+            # also orbtiming files
+            command = 'mv '+geostringin.replace('geo','orbtiming')+' orig_geos'
+            ret = os.system(command)
+            command = 'mv '+geostring2.replace('geo','orbtiming')+' orig_geos'
+            ret = os.system(command)
+
+
             geostringin=geostringout
 
 sys.exit(0)
-
-# remove any pre-existing merged geo files
-for i in range(len(geofiles)):
-    #  date from a geo file
-    geofile0=str(geofiles[i],'UTF-8')
-    date0=geofile0[geofile0.find('V_')+2:geofile0.find('V_')+10]
-    print ('date0 ',date0,date0[3:5])
-    if date0[3:5] == 'IW':
-#        print ('invalid date')
-        pol='H'
-    # is this a valid date?
-    date0=geofile0[geofile0.find('H_')+2:geofile0.find('H_')+10]
-#    print ('date0 ',date0)
-    if date0[3:5] == 'IW':
-#        print ('invalid date')
-        pol='V'
-    print ('polarization ',pol)
-
-    #  any others with same date?
-    for j in range(len(geofiles)):
-        if j != i:
-            geofile1=str(geofiles[j],'UTF-8')
-            date1=geofile1[geofile1.find(pol+'V_')+2:geofile1.find(pol+'V_')+10]
-            if date0 == date1:
-                print ('Match ',geofile0,geofile1)
-                time0start=geofile0[geofile0.find(pol+'_')+11:geofile0.find(pol+'_')+17]
-                time0end=geofile0[geofile0.find(pol+'_')+27:geofile0.find(pol+'_')+33]
-                time1start=geofile1[geofile1.find(pol+'_')+11:geofile1.find(pol+'_')+17]
-                time1end=geofile1[geofile1.find(pol+'_')+27:geofile1.find(pol+'_')+33]
-                print ('times ',time0start,time0end,time1start,time1end)
-                # if start times match, remove one with later end time
-                if time0start == time1start:
-                    if int(time0end) > int(time1end):
-                        os.system('mv '+geofile0+' orig_geos/')
-                    if int(time1end) > int(time0end):
-                        os.system('mv '+geofile1+' orig_geos/')
-

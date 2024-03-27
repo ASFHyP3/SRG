@@ -1,9 +1,0 @@
-nvcc -gencode arch=compute_70,code=sm_70 -c azimuth_compress.cu -Wno-deprecated-gpu-targets
-
-gcc -c sql_f90.c filelen.c io.c
-
-gfortran -c process_realaperture.f90 backprojectgpusub.f90 sql_mod.f90 bounds.f90 orbitrangetime.f90 latlon.f90 intp_orbit.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 orbithermite.f burstparams.f90 sentineltimingsub.f90 -ffixed-line-length-none -fopenmp
-
-nvcc -L/home/zebker/fft/fftw-3.1.2/.libs -I/home/zebker/fft/fftw-3.1.2/api process_realaperture.o backprojectgpusub.o azimuth_compress.o sql_mod.o bounds.o orbitrangetime.o latlon.o intp_orbit.o radar_to_xyz.o unitvec.o tcnbasis.o curvature.o cross.o orbithermite.o filelen.o sql_f90.o io.o sentineltimingsub.o -lsqlite3 -lfftw3f -lgomp -lstdc++ -lgfortran
-
-#nvcc -L/home/zebker/miniconda3/lib -L/home/zebker/fft/fftw-3.1.2/.libs -I/home/zebker/fft/fftw-3.1.2/api process_realaperture.o backprojectgpusub.o azimuth_compress.o sql_mod.o bounds.o orbitrangetime.o latlon.o intp_orbit.o radar_to_xyz.o unitvec.o tcnbasis.o curvature.o cross.o orbithermite.o filelen.o sql_f90.o io.o -lsqlite3 -lfftw3f -lgomp -lstdc++ -lgfortran

@@ -1,8 +1,9 @@
   !c  subroutine to get sentinel position and time vectors for backprojection processor
 
-  subroutine sentineltimingsub(rangeprocdata,rangesamples,linesmax,lines,nbursts,orbitfile)
+  subroutine sentineltimingsub(rangeprocdata,rangesamples,linesmax,lines,nbursts,orbitfile,SAFEname,swath)
 
-      character*300 orbitfile, burstfile, str
+    character*300 orbitfile, burstfile, str
+    character*200 SAFEname
       double precision x(3),v(3),xold(3),vest(3)
       double precision xx(3,28),vv(3,28),t(28),time
       double precision timefirst,timedelta,timeorbit(28),timeline(100000)
@@ -10,16 +11,21 @@
       double precision sumx,sumy,sumsqx,sumsqy,sumxy,ssxx,ssyy,ssxy
       integer*1, allocatable :: indata(:)
       integer*8 filelen
-      integer lines(nbursts),rangesamples,linesmax,nbursts
+      integer lines(nbursts),rangesamples,linesmax,nbursts,i,swath
       integer*1 rangeprocdata(rangesamples*8,linesmax*nbursts)
 
       allocate (indata(rangesamples*8))
 
+      ! how is SAFEname passed
+      do isafe=1,len_trim(SAFEname)
+         if (ichar(SAFEname(isafe:isafe)).eq.0)exit
+      end do
+      
       !c create a file with state vectors for scene
       indata=rangeprocdata(:,1)  ! read first line of burst 1
       timefirst=d8(indata(69))
       print *,'First line, first burst time: ',timefirst
-      call getburststatevectors(timefirst)
+      call getburststatevectors(timefirst,SAFEname(1:isafe-1))
       
       !c  read the orbit file state vectors
       open(22,file=orbitfile)
@@ -42,8 +48,8 @@
 !         print *,'first data line ',timefirst
 !         print *,indata(1:80)
          
-         if(iburst.le.9)str='positionburst'//char(48+iburst)//'.out'
-         if(iburst.ge.10)str='positionburst1'//char(48+iburst-10)//'.out'
+         if(iburst.le.9)str=SAFEname(1:isafe-1)//'.positionburst'//char(48+iburst)//char(48+swath)//'.out'
+         if(iburst.ge.10)str=SAFEname(1:isafe-1)//'.positionburst1'//char(48+iburst-10)//char(48+swath)//'.out'
          open(31,file=str)
          !c  read in the raw data file line by line
          do i=1,nlines

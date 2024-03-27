@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 #
 #  enter_file_ids - create a scene list file with the granule names for ASF download

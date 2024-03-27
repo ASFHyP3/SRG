@@ -24,6 +24,7 @@ proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 #  sort geofiles by date order
 geos=geos.split()
 names_times=[]
+#print (geos)
 
 for i in range(0,len(geos)):
     words=str(geos[i],'UTF-8')
@@ -49,11 +50,11 @@ for i in range(0,len(geos)):
     jd=datetime.strptime(str(scenedate), '%Y%m%d').toordinal()+1721424.5
 #    print ('Julian day ',jd)
 
-    names_times.append(str(jd)+' '+str(geos[i]))
+    names_times.append(str(jd)+' '+str(geos[i],"UTF-8"))
 
 #print names_times
 sortedgeos=sorted(names_times)
-#print (sortedgeos)
+#print ('sortedgeos',sortedgeos)
 
 #  estimate baseline and create a file for the time-baseline plot
 ftb=open('sbas_list','w')
@@ -64,7 +65,7 @@ jdfile=open('jdlist','w')
 jdlist=[]
 for i in range(0,len(sortedgeos)):
     geos[i]=sortedgeos[i].split()[1]
-    geolist.write(geos[i].replace('b','',1).replace("'",'')+'\n')
+    geolist.write(geos[i]+'\n')
 
     jdlist.append(float(sortedgeos[i].split()[0]))
     jdfile.write(str(jdlist[i])+'\n')
@@ -80,35 +81,31 @@ if maxtemporal > 0:
     
     for i in range(0,len(jdlist)):
         for j in range(0,i):
-            #  spatial baseline estimator
-            #        print ('type geos ',type(geos[i]))
-            orbtimingi=geos[i].strip().replace('geo','orbtiming').replace('b','',1)
-            orbtimingj=geos[j].strip().replace('geo','orbtiming').replace('b','',1)
-            #        print ('type orbtiming ',type(orbtimingi),orbtimingi)
-            command = '$PROC_HOME/sentinel/geo2rdr/estimatebaseline '+orbtimingi+' '+orbtimingj
-            #        command = '$PROC_HOME/sentinel/geo2rdr/estimatebaseline '+geos[i].strip().replace('geo','orbtiming')+' '+geos[j].strip().replace('geo','orbtiming')
-            #print (command)
-            proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-            (baseline1, err) = proc.communicate()
-            if abs(float(baseline1)) <= maxspatial:
-                
-                baseline2=abs(jdlist[i]-jdlist[j])
-                if baseline2 <= maxtemporal:
-                    geostri=geos[i].replace('b','',1).replace("'",'')
-                    geostrj=geos[j].replace('b','',1).replace("'",'')
-                    ftb.write(geostrj+' '+geostri+' '+str(baseline2)+' '+str(baseline1,'UTF-8').strip()+'\n')
-                    #                ftb.write(geostrj+' '+geostri+' '+str(baseline2)+' '+baseline1.decode().strip()+'\n')
-                    #                ftb.write(geos[j].strip().replace('b','',1)+' '+geos[i].strip().replace('b','',1)+' '+str(baseline2).replace('b','',1)+' '+str(basel#ine1).replace('b','',1))
+            #  first do temporal filter
+            baseline2=abs(jdlist[i]-jdlist[j])
+            if baseline2 <= maxtemporal:
+
+                #  spatial baseline estimator
+                orbtimingi=geos[i].strip().replace('geo','orbtiming')
+                orbtimingj=geos[j].strip().replace('geo','orbtiming')
+                command = '$PROC_HOME/sentinel/geo2rdr/estimatebaseline '+orbtimingi+' '+orbtimingj
+                proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+                (baseline1, err) = proc.communicate()
+                #print (command,' baseline1: ',str(baseline1,"UTF-8"))
+                if abs(float(baseline1)) <= maxspatial:
+                    geostri=geos[i]
+                    geostrj=geos[j]
+                    ftb.write(geostrj+' '+geostri+' '+str(baseline2)+' '+str(baseline1,"UTF-8"))
 
 else:  #  zero max temporal means minimal list of pairs
     for i in range(1,len(jdlist)):
         j=i-1
-        orbtimingi=geos[i].strip().replace('geo','orbtiming').replace('b','',1)
-        orbtimingj=geos[j].strip().replace('geo','orbtiming').replace('b','',1)
+        orbtimingi=geos[i].strip().replace('geo','orbtiming')
+        orbtimingj=geos[j].strip().replace('geo','orbtiming')
         
         baseline2=abs(jdlist[i]-jdlist[j])
-        geostri=geos[i].replace('b','',1).replace("'",'')
-        geostrj=geos[j].replace('b','',1).replace("'",'')
+        geostri=geos[i]
+        geostrj=geos[j]
         ftb.write(geostrj+' '+geostri+' '+str(baseline2)+' 100000000'+'\n')
 
 print ('sbas list written')

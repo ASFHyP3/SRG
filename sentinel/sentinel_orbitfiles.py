@@ -8,32 +8,27 @@ import os
 import string
 import time
 import subprocess
-import argparse
 from datetime import datetime
 
 # environment setup
 
-# environment setup
 # get the current environment
-HOME = os.environ['PROC_HOME']
+#HOME = os.environ['MYHOME']+'/sentinel'
 
-parser = argparse.ArgumentParser(description='Convert a .geo file into a tiff')
-parser.add_argument("Data_Dir", type=str)
-parser.add_argument("--username", type=str,
-                    help="hyp3 username")
-parser.add_argument('--password', type=str, 
-                    help="hyp3 password")
-args = parser.parse_args()
-Data_Dir = vars(args)["Data_Dir"]
-username = args.username
-password = args.password
+if len(sys.argv) < 1:
+    print ('Usage: sentinel_orbitfiles.py')
 
-print('Downloading sentinel precise orbit files for zipfiles in this directory')
+#print ('Downloading sentinel precise orbit files for zipfiles in this directory')
 
+# variables for parallel downloading
 # get list of zip files
+num=0
+EOFlist=[]
+prochome = os.getenv('PROC_HOME')
 zipfiles = []
-for file in os.listdir(Data_Dir):
+for file in os.listdir("."):
     if file.endswith(".zip"):
+#            print (file)
             mission=file[0:3]
             if file.find("SDV_") > 0:
                 acquisitiondate=file[file.find("SDV_")+4:file.find("SDV_")+12]
@@ -44,6 +39,16 @@ for file in os.listdir(Data_Dir):
             if file.find("SSH_") > 0:
                 acquisitiondate=file[file.find("SSH_")+4:file.find("SSH_")+12]
 
-            command = HOME+"/EOFrequests/getEOF.py "+acquisitiondate+" "+mission+" --username \""+username+"\" --password \""+password+"\""
+#            print (mission)
+#            print (acquisitiondate)
+#            print (os.environ['PROC_HOME'])
+            command = os.environ['PROC_HOME']+"/EOFrequests/getEOF.py "+acquisitiondate+" "+mission
             print (command)
-            ret = os.system(command)
+            # ret = os.system(command)
+            EOFlist.append(subprocess.Popen([prochome+'/EOFrequests/getEOF.py',acquisitiondate,mission]))
+            num=num+1
+
+for i in range(num):
+    EOFlist[i].wait()
+
+print ('EOF files downloaded')

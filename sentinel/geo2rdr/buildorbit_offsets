@@ -1,1 +1,0 @@
-gfortran -o orbit_offsets orbit_offsets.f90 bounds.f90 orbithermite.f latlon.f90 radar_to_xyz.f90 unitvec.f90 tcnbasis.f90 curvature.f90 cross.f90 sql_mod.f90 sql_f90.o svd.f svdvecfit.f  -lsqlite3 -fbounds-check

@@ -1,18 +1,18 @@
 !c  process sentinel swath raw file in range, split bursts
 !c
 
-  subroutine processsub(rawdata,nbytes)
+  subroutine processsub(rawdata,nbytes,SAFEname,swath)
 
   use omp_lib
 
   implicit none
   integer*1 b(80), rawdata(nbytes)
   integer*1 bin(30000*8),bytedata(32768*8)
-  complex*8 cb(10), in(30000)
+  complex*8 cb(10), in(30000), cbytedata(32768)
   complex (kind=4), allocatable :: data(:),dataspec(:),ref(:),reftime(:)
-  character*200 rawfile
+  character*200 rawfile, SAFEname
   integer*8 iplanf,iplani,nbytes,inlines,rawoffset
-  integer*4 i,j,ipolarity,nlines,npts,nsamps,nvalid,k,kk,kkk,ipri
+  integer*4 i,j,ipolarity,nlines,npts,nsamps,nvalid,k,kk,kkk,ipri,swath,isafe
   integer*4 ranfft, rangedecimation, pricount, burst, line, linesmax
   integer*4, allocatable ::  burstno(:),burstline(:),lineinburst(:)
   integer in2, in3, in4
@@ -27,7 +27,7 @@
   
   equivalence (b,cb)
   equivalence (in,bin)
-
+  
   ! allocate some arrays
   allocate (data(32768),dataspec(32768),ref(32768),reftime(32768))
   allocate (burstno(1000000),burstline(1000000),lineinburst(1000000))
@@ -47,7 +47,7 @@
   nlines=0
   inlines=nbytes/30000/8
   do i=1,inlines
-     if(mod(i,2000).eq.0)print *,'Sorting line ',i
+     if(mod(i,5000).eq.0)print *,'Sorting line ',i
      rawoffset=i-1
      rawoffset=rawoffset*30000*8
      bin=rawdata(1+rawoffset:30000*8+rawoffset) !read(11,rec=i,err=99)in
@@ -77,6 +77,7 @@
   bin=rawdata(1:30000*8) !read(11,rec=1)in
   cb=in(1:10)
   rangedecimation=iand(int(b(1+40)),255)
+  !print *,'rxgain ',int(b(1+41)),iand(int(b(1+41)),255)
   samplefreq=samplefrequency(rangedecimation)
   ipolarity=iand(in2(b(1+42)),32768)/32768
   ramprate=(-1)**(1-ipolarity)*iand(in2(b(1+42)),32767)*fref*fref/2**21
@@ -102,18 +103,20 @@
   call sfftw_execute_dft(iplanf,reftime,ref)
 
 ! loop over each line
-  !$OMP PARALLEL DO private(bytedata,data,dataspec,ioffset) &
+  !$OMP PARALLEL DO private(bytedata,cbytedata,data,dataspec,ioffset) &
   !$OMP shared(nlines,nsamps,iplanf,iplani,ref,burstno,lineinburst,nvalid,rangeprocdata,linesmax,rawdata)
   do i=1,nlines
-     if(mod(i,2000).eq.0)print *,'At line ',i !,int(i,8)*30000*8,linesmax*(burstno(i)-1)+lineinburst(i)
+     if(mod(i,5000).eq.0)print *,'At line ',i !,int(i,8)*30000*8,linesmax*(burstno(i)-1)+lineinburst(i)
      bytedata(1:30000*8-80)=rawdata(80+1+int(i-1,8)*30000*8:int(i,8)*30000*8) !     read(11,rec=i)in
      bytedata(nsamps*8+1:32768*8)=0
 !     if(mod(i,2000).eq.1)print *,'At line ',i,in(1:20)
 
      ! transform in range
-     call sfftw_execute_dft(iplanf,bytedata,dataspec) !data,dataspec)
+     cbytedata=transfer(bytedata,cbytedata)
+     call sfftw_execute_dft(iplanf,cbytedata,dataspec) !data,dataspec)
      dataspec=dataspec*conjg(ref)  ! multiply by ref
-     call sfftw_execute_dft(iplani,dataspec,bytedata)  ! back to time domain
+     call sfftw_execute_dft(iplani,dataspec,cbytedata)  ! back to time domain
+     bytedata=transfer(cbytedata,bytedata)
      if(burstno(i).ge.1.and.burstno(i).le.burst)then
         ioffset=int(linesmax,8)*int((burstno(i)-1),8)+int(lineinburst(i),8)
         rangeprocdata(1:80, ioffset)=rawdata(1+int(i-1,8)*30000*8:80+int(i-1,8)*30000*8)
@@ -123,23 +126,34 @@
   !$OMP end parallel do
 
   print *,'Processed lines: ',nlines,' of length ',nvalid,' plus header of 10'
+
+  do isafe=1,len_trim(SAFEname)
+     if(ichar(SAFEname(isafe:isafe)).eq.0)exit
+  end do
+
 !  open(21,file='rangesamples')
 !  write(21,*)nvalid+10
 !  close(21)
 
-!  open(99,file='rangedata',access='direct',recl=(nvalid+10)*8)
+!  open(99,file=SAFEname(1:isafe-1)//'.rangedata',access='direct',recl=(nvalid+10)*8)
 !  do i=1,linesmax*burst
 !     write(99,rec=i)rangeprocdata(:,i)
 !  end do
+!  print *,'saving rangedata ',nvalid
+!  open(99,file=SAFEname(1:isafe-1)//'.rangedata',access='stream')
+!  close(99,status='delete')
+!  open(99,file=SAFEname(1:isafe-1)//'.rangedata',access='stream')
+!  write(99)rangeprocdata(81:nvalid*8,1:linesmax*burst)
 !  close(99)
   
   !  create position files
-  orbitfile='precise_orbtiming'
 
-  call sentineltimingsub(rangeprocdata,nvalid+10,linesmax,burstline,burst,orbitfile)
+  orbitfile=SAFEname(1:isafe-1)//'.orbtiming'
+  call sentineltimingsub(rangeprocdata,nvalid+10,linesmax,burstline,burst,orbitfile,SAFEname(1:isafe-1),swath)
   !  call backproject
-  slcoutfile='slc'
-  call backprojectgpusub(rangeprocdata, nvalid+10, burst*linesmax, burst, burstline, slcoutfile)
+
+  slcoutfile=SAFEname(1:isafe-1)//'.geo' !slc'
+  call backprojectgpusub(rangeprocdata, nvalid+10, burst*linesmax, burst, burstline, slcoutfile, SAFEname(1:isafe-1), swath)
   
   deallocate (data,dataspec,ref,reftime,rangeprocdata)
   deallocate (burstno,burstline,lineinburst)

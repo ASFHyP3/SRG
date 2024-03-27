@@ -12,15 +12,16 @@
 !
 !!!!!
 
-subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, lines, slcoutfile)
+subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, lines, slcoutfile, SAFEname, swath)
   
 !  use sql_mod
   implicit none
 
   !  arguments
   complex rangeprocdata(rangesamples,linestotal)
-  integer rangesamples, nbursts, linestotal, lines(nbursts)
+  integer rangesamples, nbursts, linestotal, lines(nbursts), swath
   character*300 slcoutfile
+  character*200 SAFEname
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! DECLARE LOCAL VARIABLES
@@ -29,7 +30,7 @@ subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, l
   character*300 orbtimingfile,units,type,table,posfile
 
   integer*1 header(80)
-  integer stat,intp_orbit
+  integer stat,intp_orbit,isafe
   integer*4 azimuthBursts,samplesPerBurst
   integer*4 fddem, fdout, initdk
   integer*4 demwidth,demlength,idemwidth,idemlength,width,length
@@ -130,6 +131,11 @@ subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, l
   !c  loop over all bursts in this subswath
   linesmax=linestotal/nbursts
   !print *,'linesmax ',linesmax, nbursts
+
+  ! SAFEname to point to correct positionfile
+  do isafe=1,len_trim(SAFEname)
+     if (ichar(SAFEname(isafe:isafe)).eq.0)exit
+  end do
   
   do iburst=1,nbursts
      header=transfer(rangeprocdata(1:10,1+linesmax*(iburst-1)), header)
@@ -137,8 +143,8 @@ subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, l
 !     call burstparams(rangeprocdata(1,1+linesmax*(iburst-1)), starttime, prf, samplefreq, pri, range0, wvl)
      !print *,'burstparams ',starttime,prf,samplefreq,pri,range0,wvl
      slantRangeTime=2*range0/sol
-     if(iburst.le.9)posfile='positionburst'//char(iburst+48)//'.out'
-     if(iburst.ge.10)posfile='positionburst1'//char(iburst-10+48)//'.out'
+     if(iburst.le.9)posfile=SAFEname(1:isafe-1)//'.positionburst'//char(iburst+48)//char(48+swath)//'.out'
+     if(iburst.ge.10)posfile=SAFEname(1:isafe-1)//'.positionburst1'//char(iburst-10+48)//char(48+swath)//'.out'
 !     print *,'accessing positionfile ',posfile,lines
      re=6378137.d0
      ht=700000.d0
@@ -147,7 +153,7 @@ subroutine backprojectgpusub(rangeprocdata, rangesamples, linestotal, nbursts, l
 
   !c read in the orbit state vectors
      
-  open(21,file='precise_orbtiming') !orbtimingfile)
+  open(21,file=SAFEname(1:isafe-1)//'.orbtiming') !orbtimingfile)
   read(21,*)timefirst
   read(21,*)timeend
   read(21,*)nlines
@@ -417,7 +423,7 @@ subroutine burstparams(rawdata, starttime, prf, samplefreq, pri, range0, wvl)
   swst = in3(rawdata(1+53))/fref*1.e-6;
   irank=iand(int(rawdata(1+49)), 31)
   pri = in3(rawdata(1+50))/fref*1.e-6;
-  range0=c/2.*(irank*pri+swst);
+  range0=c/2.*(irank*pri+swst)+60.; ! add 60 m calibration factor
 
   return
 end subroutine burstparams

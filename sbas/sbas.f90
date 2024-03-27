@@ -8,8 +8,9 @@ PROGRAM sbas
   IMPLICIT none
 
   !specifications
-  INTEGER::i,j,r,c,rows,cols,stat,fstat,ierr,looks,k,kk,n_refs
-  INTEGER*8 ::nr, naz, reclphase, recsize !image size
+  INTEGER::i,j,r,c,rows,cols,stat,fstat,ierr,looks,k,kk,n_refs,igramnumber
+  real*8 jdprimary, jdsecondary
+  INTEGER*8 ::nr, naz, reclphase, recsize, filelen !image size
   INTEGER::nslc !number of slcs
   INTEGER::ncells !number of cells (files in flist)
   INTEGER,DIMENSION(13)::statb
@@ -17,17 +18,15 @@ PROGRAM sbas
   CHARACTER(100),DIMENSION(:),ALLOCATABLE::cells !array of file names
   CHARACTER(100)::strint,strunw,stramp,strcc
   REAL,DIMENSION(:,:,:),ALLOCATABLE::coh,phase,temp3
-  REAL,DIMENSION(:,:),ALLOCATABLE::amp,dat,mask,temp2,stack
+  REAL,DIMENSION(:,:),ALLOCATABLE::amp,dat,mask,temp2,stack,stacktime
   REAL,DIMENSION(:),ALLOCATABLE::temp1, phase_ref, disp
-!  COMPLEX,DIMENSION(:,:,:),ALLOCATABLE::cpx
   REAL,DIMENSION(:,:),ALLOCATABLE::Tm,deltime,Tminv,ident
   REAL,DIMENSION(:),ALLOCATABLE::Bperp,timedeltas
   INTEGER::r_ref,az_ref !reference pixel location
   REAL,DIMENSION(:,:,:),ALLOCATABLE::velocity
-  INTEGER,DIMENSION(1:2)::maskShape,ampShape
-  INTEGER,DIMENSION(1:3)::phaseShape
-  integer, dimension(2,1000000) :: ref_locs
-  real:: stacktime
+  integer, dimension(:,:), allocatable :: ref_locs
+  real, dimension(:,:,:),allocatable :: amps
+  integer, dimension(:,:),allocatable :: npts
 
   !executions
 
@@ -48,18 +47,18 @@ PROGRAM sbas
   CALL getarg(4,str)
   READ(str,*)nr !width of files
 
-  ALLOCATE(cells(ncells), disp(nr))
+  ALLOCATE(cells(ncells),ref_locs(2,10000000))
 
   OPEN(UNIT=1,FILE=filelist,STATUS='old')
   READ(1,'(A)',end=10,IOSTAT=stat)cells
-  !PRINT*,cells(:) !print file names
+!  PRINT*,cells(:) !print file names
 10 continue
   CLOSE(1)
 
-  OPEN(UNIT=2,FILE=cells(1),FORM='unformatted',ACCESS='direct',RECL=nr*8)
+  OPEN(UNIT=2,FILE=trim(adjustl(cells(1))),FORM='unformatted',ACCESS='direct',RECL=nr*8)
   ierr=fstat(2,statb)
   naz=statb(8)/8/nr
-  WRITE(*,*)'Lines in file: ',naz
+  WRITE(*,*)' Lines in file: ',naz
   CLOSE(2)
 
   ! set list of reference points, default to scene center
@@ -70,76 +69,26 @@ PROGRAM sbas
      CALL getarg(5,str)
      READ(str,*)ref_locs_file ! ref pix file with list of locations
      open(unit=3,file=ref_locs_file)
-     do i=1,1000000
+     do i=1,10000000
         read(3,*,end=99)ref_locs(:,i)
      end do
 99   n_refs=i-1
   end if
   print *,'Number of reference points: ',n_refs
 
-!  ALLOCATE(coh(nr,naz,ncells))
-  ALLOCATE(phase(nr,naz,ncells))
-  ALLOCATE(amp(nr,naz))
-  ALLOCATE(dat(2*nr,naz))
-  ALLOCATE(temp1(2*nr*naz),phase_ref(ncells))
-!  coh(:,:,:)=0
+  ALLOCATE(phase(nr,naz,ncells),amps(nr,naz,ncells))
+  ALLOCATE(amp(nr,naz),npts(nr,naz),stacktime(nr,naz),stack(nr,naz))
+  ALLOCATE(phase_ref(ncells), disp(nr))
+
   phase(:,:,:)=0
   amp(:,:)=0
-  dat(:,:)=0
-  temp1(:)=0
+  stacktime=0.
+  stack=0.
+  amps=0.
 
-  !read in unwrapped igrams
-  DO i=1,ncells
-     strint=cells(i)
-     OPEN(UNIT=22,FILE=strint,FORM='unformatted',ACCESS='direct',RECL=2*nr*naz*4,CONVERT='LITTLE_ENDIAN')  
-     READ(22,rec=1)dat
-     CLOSE(22)
-     phase(:,:,i)=dat((nr+1):2*nr,:)
-  END DO
-!  PRINT*,'Unwrapped interferograms read in.'
-
-  !read in amplitudes
-  DO i=1,ncells
-     strint=cells(i)
-     stramp=Replace_Text(strint,'.unw','.amp')
-     OPEN(UNIT=23,FILE=stramp,FORM='unformatted',ACCESS='direct',RECL=2*nr*naz*4,CONVERT='LITTLE_ENDIAN')  
-     READ(23,rec=1)dat
-     CLOSE(23)
-     amp=amp+(dat(1:2*nr-1:2,:)**2+dat(2:2*nr:2,:)**2)/ncells
-  END DO
-  amp=sqrt(amp)
-
-!  PRINT*,'Amplitudes read in'
-
-  DEALLOCATE(temp1)
-
-  ALLOCATE(mask(nr,naz))
-  mask(:,:)=1
-  
-
-!Save amp
-  OPEN(11,FILE='amp',FORM='unformatted',ACCESS='direct',RECL=nr*naz*4)
-  WRITE(11,rec=1)amp
-  CLOSE(11)
-!  OPEN(12,FILE='mask',FORM='unformatted',ACCESS='direct',RECL=nr*naz*4)
-!  WRITE(12,rec=1)mask
-!  CLOSE(12)
-
-!Save dimensions of matrices for debug purposes later
-!  ampShape=SHAPE(amp)
-!  maskShape=SHAPE(mask)
-!  phaseShape=SHAPE(phase)
-!  OPEN(14,FILE='dimensions',STATUS='replace')
-!  WRITE(14,*)ampShape(1),ampShape(2),maskShape(1),maskShape(2),phaseShape(1),phaseShape(2),phaseShape(3)
-!  CLOSE(14)
-
-!Save nr, naz, nslc, ncells parameters in one file
-  OPEN(15,FILE='parameters',STATUS='replace')
-  WRITE(15,*) nr, naz, nslc, ncells
-  CLOSE(15)
-
-!From tsxtime and tsxbaseline
-!Create an array with data from Tm.out
+  ! read in sbas parameters needed for stacking and sbas
+  !From tsxtime and tsxbaseline
+  !Create an array with data from Tm.out
   ALLOCATE(Tm(ncells,nslc-1))
   OPEN(24,FILE='Tm.out',STATUS='old')
   do k=1,ncells
@@ -148,34 +97,106 @@ PROGRAM sbas
   CLOSE(24)
   !print *,Tm
 
-!Read Bperp.out into an array
+  !Read Bperp.out into an array
   ALLOCATE(Bperp(ncells))
   OPEN(25,FILE='Bperp.out',STATUS='old')
   READ(25,*,IOSTAT=stat)Bperp
   CLOSE(25)
 
-!Create an array with data from deltime.out
-  ALLOCATE(temp1(ncells*4))
-  ALLOCATE(deltime(ncells,4))
-  stacktime=0.
+  !Create an array with data from deltime.out
+  ALLOCATE(deltime(4,ncells))
   OPEN(26,FILE='deltime.out',STATUS='old')
-  READ(26,*,IOSTAT=stat)temp1
   DO r=1,ncells
-     DO c=1,4
-        deltime(r,c)=temp1((r-1)*4+c)
-     END DO
-     stacktime=stacktime+deltime(r,2)
+     READ(26,*,IOSTAT=stat)deltime(:,r)
   END DO
   CLOSE(26)
-  DEALLOCATE(temp1)
 
-! Read time from slc to slc
+  ! Read time from slc to slc
   ALLOCATE(timedeltas(nslc-1))
   open(27,file='timedeltas.out',status='old')
   read(27,*)timedeltas
   close(27)
 
-PRINT*,'Data loaded, total stack time= ',stacktime
+  !read in unwrapped igrams
+  !$omp parallel do private(k,dat,strint,stramp) &
+  !$omp shared(cells,ref_locs,deltime,nr,naz,ncells,phase,amps,phase_ref)
+  DO i=1,ncells
+     allocate (dat(nr*2,naz))
+     strint=trim(adjustl(cells(i)))
+     OPEN(UNIT=i+10,FILE=strint,FORM='unformatted',ACCESS='direct',RECL=2*nr*naz*4,CONVERT='LITTLE_ENDIAN')  
+     READ(i+10,rec=1)dat
+     CLOSE(i+10)
+     phase(:,:,i)=dat((nr+1):2*nr,:)
+
+     stramp=Replace_Text(strint,'.unw','.amp')
+     OPEN(UNIT=i+10,FILE=stramp,FORM='unformatted',ACCESS='direct',RECL=2*nr*naz*4,CONVERT='LITTLE_ENDIAN')  
+     READ(i+10,rec=1)dat
+     CLOSE(i+10)
+     amps(:,:,i)=dat(1:2*nr-1:2,:)**2+dat(2:2*nr:2,:)**2
+ 
+     deallocate(dat)
+
+    !  compute the reference phase for ith interferogram
+     phase_ref(i)=0.
+     do k=1,n_refs
+        phase_ref(i)=phase_ref(i)+phase(nr+ref_locs(1,k),ref_locs(2,k),i)/n_refs
+     end do
+
+     ! subtract reference phase from each interferogram
+     phase(:,:,i)=phase(:,:,i)-phase_ref(i)
+
+  END DO
+  !$omp end parallel do
+  amps=sqrt(amps) ! amplitudes not powers
+
+!  print *,'reference phases: ',phase_ref
+!  print *,'deltime: ',deltime(2,:)
+
+  ! stack phases and amps
+  do i=1,ncells
+     !$omp parallel do private(k) shared(nr,naz,amps,npts,stacktime,deltime,amp,stack,ncells)
+     do j=1,nr
+        do k=1,naz
+           if(amps(j,k,i)>1.e-6)then
+              npts(j,k)=npts(j,k)+1
+              stacktime(j,k)=stacktime(j,k)+deltime(2,i)
+              amp(j,k)=amp(j,k)+amps(j,k,i)
+              stack(j,k)=stack(j,k)+phase(j,k,i)!-phase_ref(i)
+           end if
+           if(i.eq.ncells)then
+              if(npts(j,k).eq.0)then
+                 npts(j,k)=1
+                 stacktime(j,k)=1.
+              end if
+           end if
+        end do
+     end do
+     !$omp end parallel do
+  END DO
+
+  ! write stack files for further reference
+  print *,'Writing stacks'
+  OPEN(28,FILE='npts',FORM='unformatted',ACCESS='stream')
+  WRITE(28)npts
+  close(28)
+  OPEN(28,FILE='stacktime',FORM='unformatted',ACCESS='stream')
+  WRITE(28)stacktime
+  close(28)
+  !Write weighted amps and phases stack into stackmht, phases in rad/day
+  amp=amp/npts
+  stack=stack/stacktime
+  OPEN(29,FILE='stackmht',FORM='unformatted',ACCESS='direct',RECL=nr*8)
+  do i=1,naz
+     WRITE(29,rec=i)amp(:,i),stack(:,i)
+  end do
+  CLOSE(29)
+
+!Save nr, naz, nslc, ncells parameters in one file
+  OPEN(15,FILE='parameters',STATUS='replace')
+  WRITE(15,*) nr, naz, nslc, ncells
+  CLOSE(15)
+
+PRINT*,'Data loaded'
 
 !SBAS least squares
 !at each pixel, solve for velocity at (nslc-1) time interval
@@ -187,24 +208,11 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   call pinv(Tm,ncells,nslc-1,Tminv)
 !  print *,'inverse matrix computed'
 
-!  allocate (ident(nslc-1,nslc-1))
-!  open(99,file='ident')
-!  ident=matmul(Tminv,Tm)
-!  write(99,*)ident
-!  close(99)
-  
-  !  compute the reference phase
-  phase_ref=0.
-  do i=1,n_refs
-     phase_ref=phase_ref+phase(ref_locs(1,i),ref_locs(2,i),:)/n_refs
-!     print *,phase_ref,ref_locs(1,i),ref_locs(2,i)
-  end do
-
   ! velocity solution at each pixel
   !$omp parallel do private(i,temp1) shared(naz,nr,phase_ref,velocity,Tminv)
   DO j=1,naz
      DO i=1,nr
-        temp1=phase(i,j,:)-phase_ref(:)
+        temp1=phase(i,j,:)!-phase_ref(:)
         temp1=temp1(:)
         velocity(i,j,:)=MATMUL(Tminv,temp1) 
      END DO
@@ -212,15 +220,13 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   !$omp end parallel do
 !  print *,'SBAS solution computed'
   DEALLOCATE(temp1)
+
   !Write velocity matrix into file
-!  recsize=int8(nr)*int8(naz)*(int8(nslc)-1)*int8(4)
-!  print *,'nr naz nslc recsize ',nr,naz,nslc,recsize
   OPEN(28,FILE='velocity',FORM='unformatted',ACCESS='stream')!direct',RECL=recsize)
   WRITE(28)velocity
   close(28)
-!  print *,'Velocity written'
+
   OPEN(29,FILE='displacement',FORM='unformatted',ACCESS='direct',RECL=nr*8)
-!  print *,nslc,naz,naz+(nslc-1)*naz
 
   ! integrate velocities for displacement
   !$omp parallel do private(j,k,disp) shared(nslc,naz,nr,velocity,timedeltas,amp) 
@@ -237,23 +243,6 @@ PRINT*,'Data loaded, total stack time= ',stacktime
   close(29)
 !  print *,'Displacements written'
 
-!Create stack to plot images (using MATLAB)
-  ALLOCATE(stack(nr,naz))
-  !$omp parallel do private(j) shared(nr,naz,phase,stacktime)
-  do i=1,nr
-     do j=1,naz
-        stack(i,j)=sum(phase(i,j,:))/stacktime
-     end do
-  end do
-  !$omp end parallel do
-  !stack=SUM(phase,3)/stacktime
-  print *,'Computed average rate rad/day'
-  !Write stack matrix into file, amp/phase version
-  OPEN(29,FILE='stackmht',FORM='unformatted',ACCESS='direct',RECL=nr*8)
-  do i=1,naz
-     WRITE(29,rec=i)amp(:,i),stack(:,i)
-  end do
-  CLOSE(29)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -353,60 +342,19 @@ END FUNCTION Replace_Text
           !print *,r,c,mat(r,c),dmat(r,c)
        end do
     end do
-    !dmat=mat
-!    print *,'dmat'
-!    do r=1,rows
-!       print *,dmat(r,:)
-!    end do
 
     call svd(rows,cols,dmat,Sing,.true.,U,.true.,V,ierr)
-!    print *,'svd evaluated'
-    
-!    print *,'ierr= ',ierr,rows,cols
-!    print *,'Sing: ',Sing
+
     S=0.
     do c=1,cols
        S(c,c)=Sing(c)
     end do
-!    print *,'S'
-!    do r=1,cols
-!       print *,S(r,:)
-!    end do
-!    print *,'U'
-!    do r=1,rows
-!       print *,U(r,:)
-!    end do
-!    print *,'V'
-!    do r=1,cols
-!       print *,V(r,:)
-!    end do
-
-    !  test svd output
-!    allocate (X(rows,cols))
-!    X = matmul(matmul(U,transpose(S)),transpose(V))
-!    print *,'X'
-!    do r=1,rows
-!       print *,X(r,:)
-!    end do
 
     Sinv=0.
     DO r=1,cols
-!       DO c=1,cols
           if(abs(S(r,r)).gt.1.e-6)Sinv(r,r)=1./S(r,r)
-!          IF(r==c)THEN
-!             print *,'r, Sing, Sinv: ',r,Sing(r),Sinv(c,r)
-!             if(abs(Sing(r)).gt.1.e-6)Sinv(c,r)=1/Sing(r)
-!             print *,Sing(r),Sinv(c,r)
-!          ENDIF
-!       END DO
     END DO
 
-!    print *,'Sinv'
-!    do r=1,cols
-!       print *,Sinv(r,:)
-!    end do
-
-    !V=TRANSPOSE(MATMUL(TRANSPOSE(Sinv),MATMUL(TRANSPOSE(U),mat)))
 !    print *,'computing pinv'
     matinv(:,:)=sngl(MATMUL(MATMUL(V,Sinv),TRANSPOSE(U)))
 

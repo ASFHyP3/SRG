@@ -2,8 +2,8 @@
 
   integer*2, allocatable :: dem(:,:)
   real*4, allocatable :: unwrapped(:,:)
-  integer*4 loc(2,1000000)
-  real*4 phase(1000000),height(1000000),poly(3)
+  integer*4 loc(2,10000000)
+  real*4 phase(10000000),height(10000000),poly(3)
   character*300 ufile,demfile,outfile,locationfile,str,intfile
   complex, allocatable :: igram(:,:)
 
@@ -26,11 +26,12 @@
   if(iargc().ge.7)allocate (igram(len,lines))
 !c  get the locations
   open(21,file=locationfile)
-  do i=1,1000000
+  do i=1,10000000
      read(21,*,end=99)loc(1,i),loc(2,i)
+!     if(i.lt.10)print *,loc(:,i)
   end do
 99 nlocs=i-1
-!c  print *,'Locations found: ',nlocs
+!  print *,'Locations found: ',nlocs
   close(21)
 
 !c  read in the files
@@ -50,7 +51,7 @@
   do i=1,nlocs
      phase(i)=unwrapped(loc(1,i)+len,loc(2,i))
      height(i)=dem(loc(1,i),loc(2,i))
-!     print *,i,height(i),phase(i)
+!     if(i.lt.10)print *,i,loc(:,i),height(i),phase(i)
   end do
 
 !c regression coeffs
@@ -93,10 +94,10 @@
          USE lsq
          IMPLICIT NONE
          
-         REAL*8    :: x(10000),y(10000),xrow(0:20), wt = 1.0, beta(0:20), &
+         REAL*8    :: x(10000000),y(10000000),xrow(0:20), wt = 1.0, beta(0:20), &
                        var, covmat(231), sterr(0:20), totalSS, center
          real*4  poly(3)
-         REAL*4    :: xin(10000), yin(10000)
+         REAL*4    :: xin(ndata), yin(ndata)
          INTEGER   :: i, ier, iostatus, j, m, n, ndata
          LOGICAL   :: fit_const = .TRUE., lindep(0:20), xfirst
 

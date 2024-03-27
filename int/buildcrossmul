@@ -1,1 +1,0 @@
-gfortran -o crossmul crossmul.f90 filelen.o  -lfftw3f -fopenmp

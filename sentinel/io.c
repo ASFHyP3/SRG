@@ -17,7 +17,7 @@ int *lun; char *file;
      i++;
      filename[i]='\0';
    }
-   
+   //   printf("** filename %s\n",filename);
    if((fd=open(filename,O_RDWR)) < 0){
        if( (fd = open(filename,O_RDONLY)) > 0)
            printf(" Open filename %s as READ ONLY\n",filename);

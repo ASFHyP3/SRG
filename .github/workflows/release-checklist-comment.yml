@@ -14,4 +14,4 @@ jobs:
     permissions:
       pull-requests: write
     secrets:
-      USER_TOKEN: {{'${{ secrets.GITHUB_TOKEN }}'}}
+      USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}

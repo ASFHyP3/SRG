@@ -4,6 +4,7 @@ import os
 import getpass
 import readline
 import sys
+import subprocess
 
 myhome = "$PROC_HOME"
 os.environ["MYHOME"] = myhome
@@ -78,6 +79,13 @@ print (    "\nStep 3.  Run the processor. \n"+
 print (    "\nWhen the script finishes, you will have a set of .geo files both in your area and stored in the Google cloud.  Download from either and they are ready for higher level product generation. The time series products will be in the sbas directory described above.\n")
 
 ret = os.system('which nvidia-smi')
+
+if ret==0:
+    q = subprocess.Popen("nvidia-smi", stdout=subprocess.PIPE, shell=True)
+    (qq,err) = q.communicate()
+    #print ('qq return length: ',len(qq.decode()))
+    if len(qq.decode()) ==0:
+        ret=-1
 
 if ret == 0:
     command = myhome+"/sentinel/sentinel_gpu.py"

@@ -30,8 +30,19 @@ else:
     spatialbaseline=timebaseline
     if len(sys.argv)>4:
         spatialbaseline=str(sys.argv[4])
-print ('You are creating a stack with looks '+looksac+', '+looksdn+' and baselines '+timebaseline+', '+spatialbaseline+'\n\n')
-time.sleep(3)
+
+tropo='y'
+if len(sys.argv)>5:
+    tropo=sys.argv[5]
+
+thresh='0.5'
+if len(sys.argv)>6:
+    thresh=sys.argv[6]
+
+print ('You are creating a stack with looks '+looksac+', '+looksdn+' and baselines '+timebaseline+', '+spatialbaseline+' tropo='+tropo+' '+thresh+'\n\n')
+with open('calling_parameters', 'w') as f:
+    print ('You are creating a stack with looks '+looksac+', '+looksdn+' and baselines '+timebaseline+', '+spatialbaseline+' tropo='+tropo+' '+thresh+'\n\n',file=f)
+time.sleep(2)
 
 # first run the .geo stack generator
 command = '$PROC_HOME/sentinel_terminal.py'
@@ -95,20 +106,25 @@ ret = os.system(command)
 
 # gather parameters for sbas calculation
 ret = os.system('cp intlist unwlist')
-ret = os.system("sed -i 's/int/unw/g' unwlist")
+ret = os.system("$PROC_HOME/util/sed.py 's/int/unw/g' unwlist")
 
 proc = subprocess.Popen("wc -l < unwlist",stdout=subprocess.PIPE, shell=True)
 (nunwfiles,err)=proc.communicate()
 proc = subprocess.Popen("wc -l < geolist",stdout=subprocess.PIPE, shell=True)
 (nslcs,err)=proc.communicate()
 
-# troposphere correction using regression vs elevation
-command = '$PROC_HOME/int/tropocorrect.py unwlist '+unwwidth+' '+unwlength
+# determine some reference point locations first
+command = '$PROC_HOME/int/findrefpoints unwlist '+unwwidth+' '+unwlength+' '+thresh
 print (command)
 ret = os.system(command)
 
+# troposphere correction using regression vs elevation
+if tropo=='y':
+    command = '$PROC_HOME/int/tropocorrect.py unwlist '+unwwidth+' '+unwlength
+    print (command)
+    ret = os.system(command)
+
 # compute sbas velocity solution
-#command = '$PROC_HOME/sbas/sbas unwlist '+nunwfiles.rstrip()+' '+nslcs.rstrip()+' '+unwwidth+' ref_locs'
 command = '$PROC_HOME/sbas/sbas unwlist '+str(nunwfiles.decode()).rstrip()+' '+str(nslcs.decode()).rstrip()+' '+unwwidth+' ref_locs'
 print (command)
 ret = os.system(command)
