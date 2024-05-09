@@ -110,21 +110,13 @@ for i in range(lat-y,lat):
                 frsc.write(ystepstr[1]+'\n')
 
             else:
-                print ('not found',rsclist[k],'filling with zeros, likely ocean!')
+#                print ('not found',rsclist[k])
                 frsc.write('no_file\n')
                 frsc.write('0\n')
                 frsc.write('0\n')
                 frsc.write('0\n')
                 frsc.write('0\n')
                 ret=os.system('touch '+rsclist[k])
-        else:
-            print('not found',rsclist[k],'filling with zeros, likely ocean!')
-            frsc.write('no_file\n')
-            frsc.write('0\n')
-            frsc.write('0\n')
-            frsc.write('0\n')
-            frsc.write('0\n')
-            ret=os.system('touch '+rsclist[k])
         k=k+1
 
 frsc.close()                
