@@ -8,8 +8,15 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.0]
 ### Fixed
-- fixed createDEMcop.py to handle missing tiles, now fill missing tiles with zeros
-- added createDEMcop_hz.py to keep original version accessible
+- Fixed createDEMcop.py to handle missing tiles, now fill missing tiles with zeros
+- Added createDEMcop_hz.py to keep original version accessible
+
+### Changed
+- File permissions for Python files to make them executable.
+
+### Removed
+- Vendored FFTW libary.
+- Compiled C/C++ binaries
 
 ## [0.2.0]
 ### Added
