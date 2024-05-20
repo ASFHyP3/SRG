@@ -258,10 +258,10 @@ extern "C" void azimuth_compress_(
   long int getgpu = cudaSetDevice(0);
 //  printf("GPU set return: %d\n",getgpu);
   if (getgpu != 0){
-     printf("Can't grab GPU %d\n",getgpu);
+     printf("Can't grab GPU %ld\n",getgpu);
      FILE *fgetgpu = NULL;
      fgetgpu =fopen("getgpulog","a");
-     fprintf(fgetgpu,"Can't grab GPU %d\n",getgpu);
+     fprintf(fgetgpu,"Can't grab GPU %ld\n",getgpu);
      fclose(fgetgpu);
      }    
 
@@ -402,7 +402,7 @@ lon = (double *) malloc(*demwidth * sizeof(double));
   iaddr_size_t= (long long int) nlines * (long long int) *demwidth * (long long int) 2;
   nbytes=read(*fddem,demin,iaddr_size_t);
   if (nbytes < 0) {
-    printf("dem read error %d\n",nbytes);
+    printf("dem read error %lld\n",nbytes);
     printf("iaddr_off_t %ld, iaddr_size_t %ld\n",iaddr_off_t, iaddr_size_t);
     printf("nlines %d, demwidth %d\n",nlines,*demwidth);
   }
