@@ -8,7 +8,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.1]
 ### Fixed
-- Double-backslash in call to `sentinel_raw_process_cpu`.
+- Double-slash in call to `sentinel_raw_process_cpu`.
 
 ## [0.3.0]
 ### Fixed
