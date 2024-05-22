@@ -55,7 +55,7 @@ print (command)
 ret=os.system(command)
 
 #  process the scene, three swaths
-command = '$PROC_HOME/sentinel//sentinel_raw_process_cpu '+basename
+command = '$PROC_HOME/sentinel/sentinel_raw_process_cpu '+basename
 print (command)
 ret=os.system(command)
 
