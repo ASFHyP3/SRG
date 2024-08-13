@@ -1,4 +1,4 @@
-name: back-projection
+name: srg
 channels:
   - conda-forge
 dependencies:
