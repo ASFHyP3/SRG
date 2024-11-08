@@ -6,7 +6,7 @@ import sys
 import os
 import string
 
-zipfiles='ziplist'
+zipfiles='zipfiles'
 if len(sys.argv)>1:
     zipfiles=sys.argv[1]
 ngpus='1'

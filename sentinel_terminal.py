@@ -17,12 +17,14 @@ if ver[0] >= 3:
         return input()
     
 print ( "\n"+"Script to Process Sentinel-1 Stack Using Backprojection"+"\n")
-print (    "This script allows you to download Sentinel-1 data from the ASF archive and process it to deformation timeseries. As intermediate products it creates geocoded, phase compensated SLC files.  Each SLC file has a .geo suffix, and can be downloaded from your own data area in OpenSARlab or from Google drive. Fully reduced time series products are found in the created mydata/sbas directory.")
-print (  "\n"+"Step 1.  Prepare your working area"+"\n"+"\n"+"Create a working directory for your analysis, and cd to that directory.")
+#print (    "This script allows you to download Sentinel-1 data from the ASF archive and process it to deformation timeseries. As intermediate products it creates geocoded, phase compensated SLC files.  Each SLC file has a .geo suffix, and can be downloaded from your own data area in OpenSARlab or from Google drive. Fully reduced time series products are found in the created mydata/sbas directory.")
+#print (  "\n"+"Step 1.  Prepare your working area"+"\n"+"\n"+"Create a working directory for your analysis, and cd to that directory.")
 
-command = "mkdir mydata\n"
-print (command)
-ret = os.system(command)
+#command = "mkdir mydata\n"
+#print (command)
+#ret = os.system(command)
+
+# change directory to subdirectory where you have your scenelist and will download the Sentinel-1 files
 ret = os.chdir('mydata')
 
 print (    "\nStep 2.  Download Sentinel raw data to your area\n"+

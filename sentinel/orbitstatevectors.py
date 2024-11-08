@@ -18,14 +18,10 @@ def readxmlparam(xmllines, param):
             istart=str1.find('>')+1
             istop=str1.find('<')
             value=str1[istart:istop]
-            #print line[i:],'\n'
-            #print istart, istop, '\n'
             return value
 
 def timeinseconds(timestring):
-#    dt = datetime.strptime(timestring, 'TAI=%Y-%m-%dT%H:%M:%S.%f')
     dt = datetime.strptime(timestring, 'UTC=%Y-%m-%dT%H:%M:%S.%f')
-#    dt = datetime.strptime(timestring, 'UT1=%Y-%m-%dT%H:%M:%S.%f')
     secs=dt.hour*3600+dt.minute*60+dt.second+dt.microsecond/1000000.0
     return secs
 

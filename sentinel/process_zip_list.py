@@ -15,26 +15,32 @@ from datetime import datetime
 
 #
 if len(sys.argv) <2:
-    print ('Usage: process_zip_list.py ziplist gpu_number <pol=vv>')
+    print ('Usage: process_zip_list.py ziplist <gpu_number=0> <pol=vv>')
     sys.exit(1)
 
+# Required Parameters
 ziplist = sys.argv[1]
+
+# Default Parameters
 gpu_n=0
+pol = 'vv'
+
+# Get Optional Parameters
 if len(sys.argv) > 2:
        gpu_n=sys.argv[2]
-pol='vv'
+
 if len(sys.argv) > 3:
        pol=sys.argv[3]
 
-# read in files to be processed by this gpu
+# read in files to be processed by this gpu and format
 zipfiles=[]
-fziplist=open(ziplist,'r')
-zipfiles=fziplist.readlines()
-fziplist.close()
+with open(ziplist,'r') as fziplist:
+    zipfiles=fziplist.readlines()
+
 for i in range(len(zipfiles)):
     zipfiles[i]=zipfiles[i].strip()
     
-#print ('zipfiles: ',zipfiles)
+
 
 # assign a gpu
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -46,31 +52,35 @@ for zipfile in zipfiles:
     char1=zipfile.find('SSV_')
     if char1 < 0:
         char1=zipfile.find('SDV_')
-        print ('This is a dual pol acquisition')
+        pol='vh'
+        print ('    This is a dual pol acquisition '+pol)
     else:
-        print ('This is a single pol acquisition')
+        pol='vv'
+        print ('    This is a single pol acquisition '+pol)
     if char1 < 0:
         char1=zipfile.find('SSH_')
         if char1 < 0:
             char1=zipfile.find('SDH_')
-            print ('This is a dual pol acquisition')
+            pol='vh'
+            print('    This is a dual pol acquisition '+pol)
         else:
-            print ('This is a single pol acquisition')
-        #  if horizontal switch polarization (this is a hack, to be improved
-        if pol == 'vv':
             pol='hh'
+            print ('    This is a single pol acquisition '+pol)
+
+        ##  if horizontal switch polarization (this is a hack, to be improved
+        #if pol == 'vv':
+        #    pol='hh'
     char2=zipfile[char1:].find('T')
     scenedate=zipfile[char1+4:char1+char2]
 
     doy=datetime.strptime(scenedate, '%Y%m%d').timetuple().tm_yday
     year=scenedate[0:4]   # day of year and year for scene
-    print ('doy ',doy,' ',year)
+    print ('      doy ',doy,' ',year)
     if doy > 1:
         orbitfilestartdate = datetime.strptime(year+' '+str(doy-1),'%Y %j').strftime('%Y%m%d')
     else:
         lastdoy=datetime.strptime(str(int(year)-1)+'1231', '%Y%m%d').timetuple().tm_yday
         orbitfilestartdate = datetime.strptime(str(int(year)-1)+' '+str(lastdoy),'%Y %j').strftime('%Y%m%d')
-#    print 'orbit file start date: ',orbitfilestartdate
     command='grep '+orbitfilestartdate+' preciseorbitfiles'
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (orbitfilename, err) = proc.communicate()
@@ -82,17 +92,14 @@ for zipfile in zipfiles:
 #    and process the scene if you have the precise orbit
 
     if len(orbitfilename) < 1:
-        print ('Missing precise orbit file for ',zipfile)
+        print ('    Skipping: Missing precise orbit file for ',zipfile)
         command = 'echo skipping file, missing precise orbit'
     else:
         command='$PROC_HOME/sentinel/sentinel_scene_multigpu.py '+SAFEname+' '+orbitfilename+' '+pol
 
-    print (command)
+    print ('    '+command)
     ret=os.system(command)
 
-# clean extra position files
-#command = 'find . -name \*positionburst\* -delete'
-#ret=os.system(command)
 
 print ('Loop over ziplist'+gpu_n+' complete.')
 
