@@ -30,22 +30,24 @@ proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 (datfile, err) = proc.communicate()
 basename=str(datfile[0:len(datfile)-5],'UTF-8')
 
-#print ('basename: ',basename)
-#print ('SAFEname: ',SAFEname)
-
 # read the orbitfile statevectors, store in orbtiming.full
 command = '$PROC_HOME/sentinel/orbitstatevectors.py '+orbitfile+' '+SAFEname
 print (command)
 ret=os.system(command)
 
+# Read the params file to get rsc file
+with open('params','r') as fparams:
+    params = fparams.readlines()
+rscfile = params[1].strip()
+
 # initialize the slc file
-fe=open('elevation.dem.rsc','r')
+fe=open(rscfile,'r')
 words=fe.readline()
 demwidth=words.split()[1]
 words=fe.readline()
 demlength=words.split()[1]
 fe.close()
-#print demwidth, demlength
+
 command = '$PROC_HOME/sentinel/createslc '+demwidth+' '+demlength+' '+SAFEname+'.geo'
 print (command)
 ret=os.system(command)

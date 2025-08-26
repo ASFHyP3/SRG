@@ -84,11 +84,11 @@ if pangea == 1:
 #        print (' wget command: ',command)
         ret=os.system(command)
         if ret == 0:
-            print ('retrieved ',rsc)
+            print ('            retrieved ',rsc)
     if not os.path.exists(dem):
         address='http://pangea.stanford.edu/sesfs/copernicus/'+dem
         command = 'wget -qN '+address
 #        print (' wget command: ',command)
         ret=os.system(command)
         if ret == 0:
-            print ('retrieved ',dem)
+            print ('            retrieved ',dem)

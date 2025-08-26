@@ -94,3 +94,28 @@ gfortran -c processsub.f90 backprojectgpusub.f90 bounds.f90 orbitrangetime.f90 l
 
 nvcc -o sentinel_raw_process sentinel_raw_process.o decode_line_memory.o processsub.o backprojectgpusub.o azimuth_compress.o bounds.o orbitrangetime.o latlon.o intp_orbit.o radar_to_xyz.o unitvec.o tcnbasis.o curvature.o cross.o orbithermite.o filelen.o io.o sentineltimingsub.o getburststatevectors.o $PROC_HOME/fft/fftw-3.3.9/.libs/libfftw3f.a -lstdc++ -lgfortran -lgomp
 cd ..
+
+cd kp_scripts
+cd int
+gfortran -o int_simmask int_simmask.f90
+gfortran -o refpointsfromsim refpointsfromsim.f90
+echo 'built int_simmask & refpointsfromsim in kp_scripts/int'
+cd ..
+
+cd ps
+gfortran -o cosine_sim_mask cosine_sim_mask.f90 -fopenmp -lrt -lpthread $PROC_HOME/fft/fftw-3.3.9/.libs/libfftw3f.a
+echo 'built cosine_sim_mask in kp_scripts/ps'
+cd ..
+
+cd sbas
+gfortran -o sbas_unique sbas_unique.f90 svd.f90 -fopenmp -lrt -lpthread
+echo 'built sbas_unique in kp_scripts/sbas'
+cd ..
+
+cd util
+gfortran -o coverage_mask coverage_mask.f90
+gfortran -o cull_geolist_fromsim cull_geolist_fromsim.f90 -fopenmp -lrt -lpthread
+gfortran -o determine_valid determine_valid.f90 -fopenmp -lrt -lpthread
+gfortran -o regressheight regressheight.f90 lsq.o
+echo 'built coverage_mask, cull_geolist_fromsim, determine_valid, & regressheight in kp_scripts/util'
+cd ..

@@ -65,7 +65,7 @@ for i in range(lat-y,lat):
     for j in range(long,long+x):
         #print ('tile: ',i,j)
         command = '$PROC_HOME/DEM/cop_dem.py '+str(i)+' '+str(j)
-        print (command)
+        print ('\n        '+command)
         ret=os.system(command)
 
 # scan the rsc files for width, xstep parameters
@@ -98,7 +98,7 @@ for i in range(lat-y,lat):
                 heightstr=strings[1].split()
                 xwidth.append(widthstr[1])
                 xstep.append(xstepstr[1])
-                print(demfile,widthstr)
+                print('        '+demfile,widthstr)
                 widthmin=min(widthmin,int(widthstr[1]))
                 xstepmax=max(xstepmax,float(xstepstr[1]))
                 widthmax=max(widthmax,int(widthstr[1]))
@@ -110,7 +110,7 @@ for i in range(lat-y,lat):
                 frsc.write(ystepstr[1]+'\n')
 
             else:
-                print ('not found',rsclist[k],'filling with zeros, likely ocean!')
+                print ('            not found',rsclist[k],'filling with zeros, likely ocean!')
                 frsc.write('no_file\n')
                 frsc.write('0\n')
                 frsc.write('0\n')
@@ -118,7 +118,7 @@ for i in range(lat-y,lat):
                 frsc.write('0\n')
                 ret=os.system('touch '+rsclist[k])
         else:
-            print('not found',rsclist[k],'filling with zeros, likely ocean!')
+            print('            not found',rsclist[k],'filling with zeros, likely ocean!')
             frsc.write('no_file\n')
             frsc.write('0\n')
             frsc.write('0\n')
@@ -140,7 +140,8 @@ if os.path.exists('updem.rsc'):
     os.system('rm updem.rsc')
 
 command = '$PROC_HOME/DEM/mosaicDEM demrscparams '+str(x)+' '+str(y)
-print (command)
+print('\n        Mosaicing DEM tiles')
+print('          '+command)
 ret=os.system(command)
 # and we need an rsc file to go with this
 fd=open('updem.rsc','w')
@@ -170,21 +171,22 @@ bot=str(latmin)
 left=str(lonmin)
 right=str(lonmax)
 command = '$PROC_HOME/DEM/createspecialdem updem updem.rsc '+outdemfile+' '+outdemrscfile+'  '+top+' '+bot+' '+left+' '+right+' '+upsamplex+' '+upsampley
-
-print (command)
+print('\n        Upsampling DEM')
+print('          '+command)
 ret = os.system(command)
 
 # convert geoid-based dem to ellipsoid
 command='mv '+outdemfile+' '+outdemfile+'.geoid'
-print (command)
+#print (command)
 ret=os.system(command)
 command='mv '+outdemrscfile+' '+outdemrscfile+'.geoid'
-print (command)
+#print (command)
 ret=os.system(command)
 
 
 command='$PROC_HOME/DEM/geoid2008_ellipsoid_interpolate '+outdemfile+'.geoid '+outdemrscfile+'.geoid '+outdemfile+' '+outdemrscfile+' $PROC_HOME/DEM/egm2008_geoid_grid'
-print (command)
+print('\n        Referncing to ellipsoid')
+print('          '+command)
 ret=os.system(command)
 
 #  clean up
