@@ -19,5 +19,5 @@ for file in os.listdir("."):
             '--no-verbose',
             '--content-disposition',
             '-N',
-            f'https://s1-orbits.asf.alaska.edu/scene/{scene}'
+            f'https://s1-orbits.asf.alaska.edu/scene/{scene}',
         ])
