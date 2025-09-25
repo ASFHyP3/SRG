@@ -4,9 +4,9 @@
 #
 
 import os
+import subprocess
 import sys
 
-import s1_orbits
 
 if len(sys.argv) < 1:
     print ('Usage: sentinel_orbitfiles.py')
@@ -14,4 +14,4 @@ if len(sys.argv) < 1:
 for file in os.listdir("."):
     if file.endswith(".zip"):
         scene = file.strip('.zip')
-        s1_orbits.fetch_for_scene(scene)
+        subprocess.run(['wget', '--content-disposition', f'https://s1-orbits.asf.alaska.edu/scene/{scene}'])
