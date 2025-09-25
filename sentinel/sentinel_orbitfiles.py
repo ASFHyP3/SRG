@@ -5,11 +5,6 @@
 
 import os
 import subprocess
-import sys
-
-
-if len(sys.argv) < 1:
-    print ('Usage: sentinel_orbitfiles.py')
 
 for file in os.listdir("."):
     if file.endswith(".zip"):
