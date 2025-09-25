@@ -16,3 +16,5 @@ for file in os.listdir("."):
             '-N',
             f'https://s1-orbits.asf.alaska.edu/scene/{scene}',
         ])
+
+print ('EOF files downloaded')
