@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1]
+### Added
+- Instructions on how to update the repository based on a provided tarball
+
 ## [0.4.0]
 ### Changed
 - Rename repository from Back-Projection to the Stanford Radar Group SAR Processor (SRG)
