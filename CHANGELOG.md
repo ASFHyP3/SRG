@@ -10,6 +10,9 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Re-implemented Sentinel-1 orbit fetching using the `s1-orbits.asf.alaska.edu` API
 
+### Added
+- Instructions on how to update the repository based on a provided tarball
+
 ## [0.4.0]
 ### Changed
 - Rename repository from Back-Projection to the Stanford Radar Group SAR Processor (SRG)
