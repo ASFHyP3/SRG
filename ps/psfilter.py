@@ -7,7 +7,7 @@ from datetime import datetime
 import os
 import math
 
-if len(sys.argv) < 3:
+if len(sys.argv) < 4:
     print ('Usage: psfilter.py igramlist interpolatelist length <psthresh> <simthresh>')
     sys.exit(1)
 
