@@ -7,8 +7,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends unzip vim curl git build-essential gfortran libfftw3-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY ./scripts/build_proc.sh ./
-RUN ./build_proc.sh && cd /
+COPY . /srg/
+COPY ./scripts/build_proc.sh /srg/
+RUN cd /srg && ./build_proc.sh && cd /
 
 FROM condaforge/mambaforge:latest as runner
 
@@ -19,14 +20,13 @@ LABEL org.opencontainers.image.description="HyP3 plugin for Stanford Radar Group
 LABEL org.opencontainers.image.vendor="Alaska Satellite Facility"
 LABEL org.opencontainers.image.authors="ASF Tools Team <UAF-asf-apd@alaska.edu>"
 LABEL org.opencontainers.image.licenses="BSD-3-Clause"
-LABEL org.opencontainers.image.url="https://github.com/ASFHyP3/hyp3-srg"
-LABEL org.opencontainers.image.source="https://github.com/ASFHyP3/hyp3-srg"
+LABEL org.opencontainers.image.url="https://github.com/ASFHyP3/srg"
+LABEL org.opencontainers.image.source="https://github.com/ASFHyP3/srg"
 LABEL org.opencontainers.image.documentation="https://hyp3-docs.asf.alaska.edu"
 
 ARG CONDA_UID=1000
 ARG CONDA_GID=1000
 
-ENV PROC_HOME=/srg
 ENV PYTHONDONTWRITEBYTECODE=true
 ENV MYHOME=/home/conda
 ENV DEBIAN_FRONTEND=noninteractive
@@ -44,6 +44,7 @@ SHELL ["/bin/bash", "-l", "-c"]
 
 USER ${CONDA_UID}
 WORKDIR /home/conda/
+
 
 COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg/snaphu_v2.0b0.0.0/bin/snaphu /srg/bin/snaphu
 COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg /srg
