@@ -1,9 +1,0 @@
-hyp3lib<5,>=3
-asf_search
-s1_orbits
-
-[develop]
-ruff
-pytest
-pytest-cov
-pytest-console-scripts
