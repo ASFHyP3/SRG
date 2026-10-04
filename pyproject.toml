@@ -63,6 +63,7 @@ where = ["src"]
 [tool.ruff]
 line-length = 120
 src = ["src", "tests"]
+extend-exclude = ["asfdata", "DEM", "int", "ps", "sbas", "sentinel", "snaphu_v2.0b0.0.0", "util", "sentinel_terminal.py", "sentinel_timeseries.py"]
 
 [tool.ruff.format]
 indent-style = "space"
@@ -103,3 +104,4 @@ install_types = true
 non_interactive = true
 pretty = true
 disable_error_code = ["import-untyped"]
+exclude = ["asfdata", "DEM", "int", "ps", "sbas", "sentinel", "snaphu_v2.0b0.0.0", "util", "sentinel_terminal.py", "sentinel_timeseries.py"]
