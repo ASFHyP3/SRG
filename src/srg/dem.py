@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 
-from hyp3_srg import utils
+from srg import utils
 
 
 log = logging.getLogger(__name__)

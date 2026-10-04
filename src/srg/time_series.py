@@ -12,7 +12,7 @@ from shutil import copyfile
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.fetch import download_file as download_from_http
 
-from hyp3_srg import dem, utils
+from srg import dem, utils
 
 
 log = logging.getLogger(__name__)

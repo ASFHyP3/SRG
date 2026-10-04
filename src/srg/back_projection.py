@@ -10,7 +10,7 @@ from pathlib import Path
 from hyp3lib.aws import upload_file_to_s3
 from shapely import unary_union
 
-from hyp3_srg import dem, utils
+from srg import dem, utils
 
 
 log = logging.getLogger(__name__)
