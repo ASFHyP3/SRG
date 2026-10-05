@@ -1,0 +1,3 @@
+[hyp3]
+back_projection = srg.back_projection:main
+time_series = srg.time_series:main
