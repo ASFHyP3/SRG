@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip vim curl 
 
 COPY . /srg/
 COPY ./scripts/build_proc.sh /srg/
+RUN chmod +x /srg/build_proc.sh
 RUN cd /srg && ./build_proc.sh && cd /
 
 FROM condaforge/mambaforge:latest as runner

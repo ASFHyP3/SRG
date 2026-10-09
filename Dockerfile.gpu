@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip vim curl 
 
 COPY . /srg/
 COPY ./scripts/build_proc.sh /srg/
+RUN chmod +x /srg/build_proc.sh
 RUN cd /srg && ./build_proc.sh && cd /
 
 FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 as runner
