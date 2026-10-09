@@ -1,0 +1,45 @@
+name: Test and build
+
+on:
+  push:
+    branches:
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  call-pytest-workflow:
+    # Docs: https://github.com/ASFHyP3/actions
+    uses: ASFHyP3/actions/.github/workflows/reusable-pytest.yml@v0.20.0
+    permissions:
+      contents: read
+    with:
+      local_package_name: srg
+      python_versions: >-
+        ["3.10", "3.11", "3.12", "3.13"]
+
+  call-version-info-workflow:
+    # Docs: https://github.com/ASFHyP3/actions
+    uses: ASFHyP3/actions/.github/workflows/reusable-version-info.yml@v0.20.0
+    permissions:
+      contents: read
+    with:
+      python_version: "3.10"
+
+  call-docker-ghcr-workflow:
+    needs: call-version-info-workflow
+    # Docs: https://github.com/ASFHyP3/actions
+    uses: ASFHyP3/actions/.github/workflows/reusable-docker-ghcr.yml@v0.20.0
+    permissions:
+      contents: read
+      packages: write
+    with:
+      version_tag: ${{ needs.call-version-info-workflow.outputs.version_tag }}
+      user: tools-bot
+      file: Dockerfile.gpu
+    secrets:
+      USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
