@@ -43,6 +43,8 @@ Documentation = "https://hyp3-docs.asf.alaska.edu"
 [project.entry-points.hyp3]
 back_projection = "srg.back_projection:main"
 time_series = "srg.time_series:main"
+process_intfs = "srg.process_intfs:main"
+process_ts = "srg.process_ts:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

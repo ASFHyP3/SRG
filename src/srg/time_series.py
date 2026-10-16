@@ -34,21 +34,24 @@ def get_gslc_uris_from_s3(bucket: str, prefix: str = '') -> list[str]:
     return uris
 
 
-def load_products(uris: Iterable[str], overwrite: bool = False):
+def load_products(uris: Iterable[str], overwrite: bool = False, work_dir: Path | None = None):
     """Load the products from the provided URIs
 
     Args:
         uris: list of URIs to the SRG GSLC products
         overwrite: overwrite existing products
     """
-    work_dir = Path.cwd()
+    print(uris)
+    if work_dir is None:
+        work_dir = Path.cwd()
     granule_names = []
     for uri in uris:
         name = Path(Path(uri).name)
         geo_name = name.with_suffix('.geo')
         zip_name = name.with_suffix('.zip')
 
-        product_exists = geo_name.exists() or zip_name.exists()
+        product_exists = (work_dir / geo_name).exists() or (work_dir / zip_name).exists()
+        print('PRODUCT_EXISTS', product_exists)
         if product_exists and not overwrite:
             pass
         elif uri.startswith('s3'):
@@ -56,13 +59,21 @@ def load_products(uris: Iterable[str], overwrite: bool = False):
         elif uri.startswith('http'):
             download_from_http(uri, directory=work_dir)
         elif len(Path(uri).parts) > 1:
-            shutil.copy(uri, work_dir)
-
-        if not geo_name.exists():
-            shutil.unpack_archive(name.with_suffix('.zip'), work_dir)
+            if Path(uri).exists():
+                shutil.copy(uri, work_dir)
+            else:
+                uri = uri.replace('.geo', '.zip')
+                if Path(uri).exists():
+                    shutil.copy(uri, work_dir)
+                else:
+                    raise RuntimeError('The granules do not exist')
+        if not (work_dir / geo_name).exists():
+            if not (work_dir / zip_name).exists():
+                shutil.unpack_archive(name.with_suffix('.zip'), work_dir)
+            else:
+                shutil.unpack_archive(work_dir / name.with_suffix('.zip'), work_dir)
 
         granule_names.append(str(name))
-
     return granule_names
 
 
@@ -367,7 +378,6 @@ def time_series(
     utils.call_stanford_module('util/merge_slcs.py', work_dir=work_dir)
 
     create_time_series(work_dir=ps_sbas_dir, baselines=(tbaseline, pbaseline), process=process)
-
     zip_path = package_time_series(granule_names, bounds, work_dir, process)
     if bucket:
         upload_file_to_s3(zip_path, bucket, bucket_prefix)

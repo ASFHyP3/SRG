@@ -13,7 +13,7 @@ def main():
     parser = argparse.ArgumentParser(prefix_chars='+', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '++process',
-        choices=['back_projection', 'time_series'],
+        choices=['back_projection', 'time_series', 'process_intfs', 'process_ts'],
         default='back_projection',
         help='Select the HyP3 entrypoint to use',  # HyP3 entrypoints are specified in `pyproject.toml`
     )
