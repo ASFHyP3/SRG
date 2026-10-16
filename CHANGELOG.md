@@ -9,7 +9,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.5.0]
 ### Added
 - Added hyp3-srg into SRG repo.
-- Added `process_ts` workflow to process custom time series.
+- Added `process_intfs` and `process_ts` workflows to process wrapped interferograms and custom time series.
 
 ## [0.4.3]
 ### Fixed
