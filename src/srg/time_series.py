@@ -236,11 +236,10 @@ def create_time_series_product_name(
     prefix = f'S1_SRG_{process.upper()}'
     split_names = [granule.split('_') for granule in granule_names]
 
+    # absolute-to-relative orbit offset for each Sentinel-1 platform
+    orbit_offsets = {'S1A': 73, 'S1B': 27, 'S1C': 172}
     absolute_orbit = split_names[0][7]
-    if split_names[0][0] == 'S1A':
-        relative_orbit = str(((int(absolute_orbit) - 73) % 175) + 1)
-    else:
-        relative_orbit = str(((int(absolute_orbit) - 27) % 175) + 1)
+    relative_orbit = str(((int(absolute_orbit) - orbit_offsets[split_names[0][0]]) % 175) + 1)
 
     start_dates = sorted([name[5] for name in split_names])
     earliest_granule = start_dates[0]
