@@ -8,7 +8,9 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.5.0]
 ### Added
-- Added hyp3-srg into SRG repo.
+- `hyp3-srg` [v0.10.3](https://github.com/ASFHyP3/hyp3-srg/blob/develop/CHANGELOG.md#0103) has been merged into SRG. `srg` now provides these additional entrypoints:
+  * `back_projection` provides GSLC back-projection processing
+  * `time_series` process Sentinel-1 GSLC time series.
 
 ## [0.4.3]
 ### Fixed
