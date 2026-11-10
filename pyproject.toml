@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "srg"
 requires-python = ">=3.10"
 authors = [
-    {name="ASF Tools Team", email="UAF-asf-apd@alaska.edu"},
+    {name="ASF SciDev Team", email="UAF-asf-scidev@alaska.edu"},
 ]
 description = "HyP3 plugin for Stanford Radar Group (SRG) SAR Processor"
 license = {text = "BSD-3-Clause"}
