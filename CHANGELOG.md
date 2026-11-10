@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [PEP 440](https://www.python.org/dev/peps/pep-0440/)
 and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0]
+### Added
+- `src/srg/postprocess.py` (`python postprocess.py PRODUCT_DIR`), run by `time_series` before zipping:
+  1. `hdf5/` (MintPy-style) from the SRG binaries: `timeseries.h5`, `velocity.h5`, `avgPhaseVelocity.h5`, `avgSpatialCoh.h5`,
+     `avgAmplitude.h5`, `geometryGeo.h5` (height, incidenceAngle, azimuthAngle, slantRangeDistance),
+     `numInvIfgram.h5`, `coherenceSpatialAvg.txt`; referenced to one pixel (REF_Y/REF_X).
+  2. `browse/` from `hdf5/` only: PNG + KMZ for elevation, avgCoherence, avgAmplitude, avgPhaseVelocity, velocity,
+     dispCumulative, velocityStd; plus network.png and dispPixel.png.
+  - `<product>.png` (velocity) uploaded as the HyP3 browse image.
+  - Reads only files in the product zip, so it also runs on downloaded products. Failures are logged; the product
+    is still uploaded.
+- `h5py` dependency.
+
+### Changed
+- `scripts/preview.py` moved into `src/srg/postprocess.py` so the HyP3 job can call it.
+- The linear-fit velocity includes the first (zero-displacement) epoch, as MintPy `timeseries2velocity.py` does.
+- The SBAS `velocity` binary (per-interval rates, averaged without time weights) is no longer used; the stacking
+  velocity comes from `stackmht`.
+
 ## [0.5.0]
 ### Added
 - `hyp3-srg` [v0.10.3](https://github.com/ASFHyP3/hyp3-srg/blob/develop/CHANGELOG.md#0103) has been merged into SRG. `srg` now provides these additional entrypoints:

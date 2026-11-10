@@ -12,7 +12,7 @@ from shutil import copyfile
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.fetch import download_file as download_from_http
 
-from srg import dem, utils
+from srg import dem, postprocess, utils
 
 
 log = logging.getLogger(__name__)
@@ -293,6 +293,7 @@ def package_time_series(
     to_keep = [
         # Metadata
         'sbas_list',
+        'geolist',
         'parameters',
         'ref_locs',
         'dem.rsc',
@@ -316,6 +317,16 @@ def package_time_series(
     intermediate = [f.name for f in intermediate_paths]
     to_keep += intermediate
     [shutil.copy(ps_sbas_dir / f, product_path / f) for f in to_keep]
+
+    # hdf5/ and browse/ (png + kmz) inside the product; a failure here must not lose the product
+    try:
+        first_geo = (ps_sbas_dir / 'geolist').read_text().split()[0]
+        shutil.copy(ps_sbas_dir / first_geo.replace('.geo', '.orbtiming'), product_path / 'orbtiming')
+        postprocess.postprocess(product_path)
+        shutil.copy(product_path / 'browse' / 'velocity.png', work_dir / f'{product_name}.png')
+    except Exception:
+        log.exception('post-processing failed; packaging the product without hdf5/ and browse/')
+
     shutil.make_archive(str(product_path), 'zip', product_path)
     return zip_path
 
@@ -371,6 +382,8 @@ def time_series(
     zip_path = package_time_series(granule_names, bounds, work_dir, process)
     if bucket:
         upload_file_to_s3(zip_path, bucket, bucket_prefix)
+        for browse_path in sorted(work_dir.glob(f'{zip_path.stem}*.png')):
+            upload_file_to_s3(browse_path, bucket, bucket_prefix)
 
     print(f'Finished time-series processing for {", ".join(granule_names)}!')
 

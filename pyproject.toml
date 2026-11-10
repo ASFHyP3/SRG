@@ -25,6 +25,7 @@ dependencies = [
     "hyp3lib>=3,<5",
     "asf_search",
     "s1_orbits",
+    "h5py",
 ]
 dynamic = ["version", "readme"]
 
