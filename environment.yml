@@ -1,6 +1,22 @@
 name: srg
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
-  - python>=3.9
+  - python>=3.10
   - pip
+  # For packaging, and testing
+  - setuptools
+  - setuptools_scm
+  - wheel
+  - pytest
+  - pytest-console-scripts
+  - pytest-cov
+  # For running
+  - asf_search>=10.0.5
+  - hyp3_sdk
+  - hyp3lib>=3,<4
+  - matplotlib
+  - s1_orbits
+  - pip:
+    - -r requirements-static.txt
