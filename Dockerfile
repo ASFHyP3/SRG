@@ -28,6 +28,7 @@ LABEL org.opencontainers.image.documentation="https://hyp3-docs.asf.alaska.edu"
 ARG CONDA_UID=1000
 ARG CONDA_GID=1000
 
+ENV PROC_HOME=/srg
 ENV PYTHONDONTWRITEBYTECODE=true
 ENV MYHOME=/home/conda
 ENV DEBIAN_FRONTEND=noninteractive
@@ -47,7 +48,7 @@ USER ${CONDA_UID}
 WORKDIR /home/conda/
 
 
-COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg/snaphu_v2.0b0.0.0/bin/snaphu /srg/bin/snaphu
+COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg/snaphu_v2.0.7/bin/snaphu /srg/bin/snaphu
 COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg /srg
 
 RUN mamba env create -f /srg/environment.yml && \

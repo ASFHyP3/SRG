@@ -148,9 +148,9 @@ int CalcWrappedRangeDiffs(float **dpsi, float **avgdpsi, float **wrappedphase,
     for(col=0;col<ncol-1;col++){
       dpsi[row][col]=(wrappedphase[row][col+1]-wrappedphase[row][col])/TWOPI;
       if(dpsi[row][col]>=0.5){
-	dpsi[row][col]-=1.0;
+        dpsi[row][col]-=1.0;
       }else if(dpsi[row][col]<-0.5){
-	dpsi[row][col]+=1.0;
+        dpsi[row][col]+=1.0;
       }
     }
   }
@@ -158,7 +158,7 @@ int CalcWrappedRangeDiffs(float **dpsi, float **avgdpsi, float **wrappedphase,
   if(paddpsi==dpsi){
     fflush(NULL);
     fprintf(sp0,"Wrapped-gradient averaging box too large "
-	    "for input array size\nAbort\n");
+            "for input array size\nAbort\n");
     exit(ABNORMAL_EXIT);
   }
   BoxCarAvg(avgdpsi,paddpsi,nrow,ncol-1,kperpdpsi,kpardpsi);
@@ -182,9 +182,9 @@ int CalcWrappedAzDiffs(float **dpsi, float **avgdpsi, float **wrappedphase,
     for(col=0;col<ncol;col++){
       dpsi[row][col]=(wrappedphase[row][col]-wrappedphase[row+1][col])/TWOPI;
       if(dpsi[row][col]>=0.5){
-	dpsi[row][col]-=1.0;
+        dpsi[row][col]-=1.0;
       }else if(dpsi[row][col]<-0.5){
-	dpsi[row][col]+=1.0;
+        dpsi[row][col]+=1.0;
       }
     }
   }
@@ -192,7 +192,7 @@ int CalcWrappedAzDiffs(float **dpsi, float **avgdpsi, float **wrappedphase,
   if(paddpsi==dpsi){
     fflush(NULL);
     fprintf(sp0,"Wrapped-gradient averaging box too large "
-	    "for input array size\nAbort\n");
+            "for input array size\nAbort\n");
     exit(ABNORMAL_EXIT);
   }
   BoxCarAvg(avgdpsi,paddpsi,nrow-1,ncol,kpardpsi,kperpdpsi);
@@ -233,9 +233,9 @@ int CycleResidue(float **phase, signed char **residue,
   for(row=0;row<nrow-1;row++){
     for(col=0;col<ncol-1;col++){
       residue[row][col]=(signed char)LRound((coldiff[row][col]
-					     +rowdiff[row][col+1]
-					     -coldiff[row+1][col]
-					     -rowdiff[row][col])/TWOPI);
+                                             +rowdiff[row][col+1]
+                                             -coldiff[row+1][col]
+                                             -rowdiff[row][col])/TWOPI);
     }
   }
 
@@ -281,14 +281,14 @@ int CalcFlow(float **phase, short ***flowsptr, long nrow, long ncol){
   /* get memory for flow arrays */
   if((*flowsptr)==NULL){
     (*flowsptr)=(short **)Get2DRowColMem(nrow,ncol,
-					 sizeof(short *),sizeof(short));
+                                         sizeof(short *),sizeof(short));
   }
 
   /* get row flows (vertical phase differences) */
   for(row=0;row<nrow-1;row++){
     for(col=0;col<ncol;col++){
       (*flowsptr)[row][col]=(short)LRound((phase[row][col]-phase[row+1][col])
-					 /TWOPI);
+                                         /TWOPI);
     }
   }
   
@@ -296,8 +296,8 @@ int CalcFlow(float **phase, short ***flowsptr, long nrow, long ncol){
   for(row=0;row<nrow;row++){
     for(col=0;col<ncol-1;col++){
       (*flowsptr)[nrow-1+row][col]=(short)LRound((phase[row][col+1]
-						  -phase[row][col])
-						 /TWOPI);
+                                                  -phase[row][col])
+                                                 /TWOPI);
     }
   }
 
@@ -336,7 +336,7 @@ int IntegratePhase(float **psi, float **phi, short **flows,
   for(row=1;row<nrow;row++){
     for(col=0;col<ncol;col++){
       phi[row][col]=phi[row-1][col]+(ModDiff(psi[row][col],psi[row-1][col])
-	-rowflow[row-1][col]*TWOPI);
+        -rowflow[row-1][col]*TWOPI);
     }
   }
 
@@ -354,7 +354,7 @@ int IntegratePhase(float **psi, float **phi, short **flows,
  * wrapped phase to passed pointer.  Assumes flows fit into short ints.
  */
 float **ExtractFlow(float **unwrappedphase, short ***flowsptr, 
-		    long nrow, long ncol){    
+                    long nrow, long ncol){    
 
   long row, col;
   float **wrappedphase;
@@ -368,7 +368,7 @@ float **ExtractFlow(float **unwrappedphase, short ***flowsptr,
       /* fmod() gives wrong results here (maybe because of float argument?) */
       /* wrappedphase[row][col]=fmod(unwrappedphase[row][col],TWOPI); */
       wrappedphase[row][col]=unwrappedphase[row][col]
-	-TWOPI*floor(unwrappedphase[row][col]/TWOPI);
+        -TWOPI*floor(unwrappedphase[row][col]/TWOPI);
     }
   }
 
@@ -393,7 +393,7 @@ int FlipPhaseArraySign(float **arr, paramT *params, long nrow, long ncol){
   if(params->flipphasesign){
     for(row=0;row<nrow;row++){
       for(col=0;col<ncol;col++){
-	arr[row][col]*=-1;
+        arr[row][col]*=-1;
       }
     }
   }
@@ -413,12 +413,12 @@ int FlipFlowArraySign(short **arr, paramT *params, long nrow, long ncol){
   if(params->flipphasesign){
     for(row=0;row<2*nrow-1;row++){
       if(row<nrow-1){
-	maxcol=ncol;
+        maxcol=ncol;
       }else{
-	maxcol=ncol-1;
+        maxcol=ncol-1;
       }
       for(col=0;col<maxcol;col++){
-	arr[row][col]=-arr[row][col];
+        arr[row][col]=-arr[row][col];
       }
     }
   }
@@ -522,6 +522,9 @@ void *MAlloc(size_t size){
 
   void *ptr;
 
+  if(size==0){
+    return(NULL);
+  }
   if((ptr=malloc(size))==NULL){
     fflush(NULL);
     fprintf(sp0,"Out of memory\n");
@@ -539,6 +542,9 @@ void *CAlloc(size_t nitems, size_t size){
   
   void *ptr;
   
+  if(size==0){
+    return(NULL);
+  }
   if((ptr=calloc(nitems,size))==NULL){
     fflush(NULL);
     fprintf(sp0,"Out of memory\n");
@@ -555,7 +561,13 @@ void *CAlloc(size_t nitems, size_t size){
 void *ReAlloc(void *ptr, size_t size){
   
   void *ptr2;
-  
+
+  if(size==0){
+    if(ptr!=NULL){
+      free(ptr);
+    }
+    return(NULL);
+  }
   if((ptr2=realloc(ptr,size))==NULL){
     fflush(NULL);
     fprintf(sp0,"Out of memory\n");
@@ -607,7 +619,7 @@ int Set2DShortArray(short **arr, long nrow, long ncol, long value){
 /* function: ValidDataArray()
  * --------------------------
  * Given a 2D floating point array, returns FALSE if any elements are NaN
- * or infinite, and TRUE otherwise (uses math library finite() function).
+ * or infinite, and TRUE otherwise.
  */
 signed char ValidDataArray(float **arr, long nrow, long ncol){
 
@@ -616,7 +628,27 @@ signed char ValidDataArray(float **arr, long nrow, long ncol){
   for(row=0;row<nrow;row++){
     for(col=0;col<ncol;col++){
       if(!IsFinite(arr[row][col])){
-	return(FALSE);
+        return(FALSE);
+      }
+    }
+  }
+  return(TRUE);
+}
+
+
+/* function: NonNegDataArray()
+ * ---------------------------
+ * Given a 2D floating point array, returns FALSE if any elements are
+ * NaN or infinite or negative, and TRUE otherwise.
+ */
+signed char NonNegDataArray(float **arr, long nrow, long ncol){
+
+  long row, col;
+
+  for(row=0;row<nrow;row++){
+    for(col=0;col<ncol;col++){
+      if(arr[row][col] < 0){
+        return(FALSE);
       }
     }
   }
@@ -699,14 +731,14 @@ long Short2DRowColAbsMax(short **arr, long nrow, long ncol){
   for(row=0;row<nrow-1;row++){
     for(col=0;col<ncol;col++){
       if(labs(arr[row][col])>maxval){
-	maxval=labs(arr[row][col]);
+        maxval=labs(arr[row][col]);
       }
     }
   }
   for(row=nrow-1;row<2*nrow-1;row++){
     for(col=0;col<ncol-1;col++){
       if(labs(arr[row][col])>maxval){
-	maxval=labs(arr[row][col]);
+        maxval=labs(arr[row][col]);
       }
     }
   }
@@ -784,7 +816,7 @@ int Despeckle(float **mag, float ***ei, long nrow, long ncol){
   if(intensity==mag){
     fflush(NULL);
     fprintf(sp0,"Despeckling box size too large for input array size\n"
-	    "Abort\n");
+            "Abort\n");
     exit(ABNORMAL_EXIT);
   }
 
@@ -798,54 +830,54 @@ int Despeckle(float **mag, float ***ei, long nrow, long ncol){
       /* filter only if input is nonzero so we preserve mask info in input */
       if(intensity[Irow][Icol]==0){
 
-	(*ei)[row][col]=0;
+        (*ei)[row][col]=0;
 
       }else{
 
-	for(k=0;k<NARMS+1;k++){
-	  w[k]=0;
-	}
-	for(i=-1;i<=1;i++){
-	  for(j=-1;j<=1;j++){
-	    w[C]+=intensity[Irow+i][Icol+j];
-	  }
-	}
-	for(i=-1;i<=1;i++){
-	  for(j=2;j<ARMLEN+1;j++){
-	    w[T]+=intensity[Irow-j][Icol+i];
-	    w[B]+=intensity[Irow+j][Icol+i];
-	    w[L]+=intensity[Irow+i][Icol-j];
-	    w[R]+=intensity[Irow+i][Icol+j];
-	  }
-	}
-	for(i=0;i<=4;i++){
-	  for(j=jmin[i];j<=jmax[i];j++){
-	    w[TR]+=intensity[Irow-i][Icol+j];
-	    w[BR]+=intensity[Irow+i][Icol+j];
-	    w[BL]+=intensity[Irow+i][Icol-j];
-	    w[TL]+=intensity[Irow-i][Icol-j];
-	  }
-	}
-	wfull=w[C]+w[T]+w[R]+w[B]+w[L];
-	for(i=2;i<5;i++){
-	  for(j=2;j<7-i;j++){
-	    wfull+=intensity[Irow+i][Icol+j];
-	    wfull+=intensity[Irow-i][Icol+j];
-	    wfull+=intensity[Irow+i][Icol-j];
-	    wfull+=intensity[Irow-i][Icol-j];
-	  }
-	} 
-	ratiomax=1;
-	for(k=1;k<=NARMS;k+=2){
-	  wstick=w[0]+w[k]+w[k+1];
-	  if((ratio=wstick/(wfull-wstick))<1){
-	    ratio=1/ratio;
-	  }
-	  if(ratio>ratiomax){
-	    ratiomax=ratio;
-	    (*ei)[row][col]=wstick;
-	  }
-	}
+        for(k=0;k<NARMS+1;k++){
+          w[k]=0;
+        }
+        for(i=-1;i<=1;i++){
+          for(j=-1;j<=1;j++){
+            w[C]+=intensity[Irow+i][Icol+j];
+          }
+        }
+        for(i=-1;i<=1;i++){
+          for(j=2;j<ARMLEN+1;j++){
+            w[T]+=intensity[Irow-j][Icol+i];
+            w[B]+=intensity[Irow+j][Icol+i];
+            w[L]+=intensity[Irow+i][Icol-j];
+            w[R]+=intensity[Irow+i][Icol+j];
+          }
+        }
+        for(i=0;i<=4;i++){
+          for(j=jmin[i];j<=jmax[i];j++){
+            w[TR]+=intensity[Irow-i][Icol+j];
+            w[BR]+=intensity[Irow+i][Icol+j];
+            w[BL]+=intensity[Irow+i][Icol-j];
+            w[TL]+=intensity[Irow-i][Icol-j];
+          }
+        }
+        wfull=w[C]+w[T]+w[R]+w[B]+w[L];
+        for(i=2;i<5;i++){
+          for(j=2;j<7-i;j++){
+            wfull+=intensity[Irow+i][Icol+j];
+            wfull+=intensity[Irow-i][Icol+j];
+            wfull+=intensity[Irow+i][Icol-j];
+            wfull+=intensity[Irow-i][Icol-j];
+          }
+        } 
+        ratiomax=1;
+        for(k=1;k<=NARMS;k+=2){
+          wstick=w[0]+w[k]+w[k+1];
+          if((ratio=wstick/(wfull-wstick))<1){
+            ratio=1/ratio;
+          }
+          if(ratio>ratiomax){
+            ratiomax=ratio;
+            (*ei)[row][col]=wstick;
+          }
+        }
       }
     }
   }   
@@ -872,7 +904,7 @@ float **MirrorPad(float **array1, long nrow, long ncol, long krow, long kcol){
 
   /* get memory */
   array2=(float **)Get2DMem(nrow+2*krow,ncol+2*kcol,
-			    sizeof(float *),sizeof(float));
+                            sizeof(float *),sizeof(float));
   
   /* center array1 in new array */
   for(row=0;row<nrow;row++){
@@ -941,7 +973,7 @@ int BoxCarAvg(float **avgarr, float **padarr, long nrow, long ncol,
     window=0;
     for(i=row;i<row+krow;i++){
       for(col=0;col<kcol;col++){
-	window+=padarr[i][col];
+        window+=padarr[i][col];
       }
     }
     avgarr[row][0]=(float )window;
@@ -949,8 +981,8 @@ int BoxCarAvg(float **avgarr, float **padarr, long nrow, long ncol,
     /* convolve window with row, using result of last cell */
     for(col=1;col<ncol;col++){
       for(i=row;i<row+krow;i++){
-	window-=padarr[i][col-1];
-	window+=padarr[i][col+kcol-1];
+        window-=padarr[i][col-1];
+        window+=padarr[i][col+kcol-1];
       }
       avgarr[row][col]=(float )window;
     }
@@ -1002,7 +1034,7 @@ int FlattenWrappedPhase(float **wrappedphase, float **unwrappedest,
       wrappedphase[row][col]-=unwrappedest[row][col];
       wrappedphase[row][col]=fmod(wrappedphase[row][col],TWOPI);
       if(wrappedphase[row][col]<0){
-	wrappedphase[row][col]+=TWOPI;
+        wrappedphase[row][col]+=TWOPI;
       }
     }
   }
@@ -1136,7 +1168,7 @@ void SetDump(int signum){
   }else{
     fflush(NULL);
     fprintf(sp0,"WARNING: Invalid signal (%d) passed to signal handler\n",
-	    signum);
+            signum);
   }
 
   /* done */
@@ -1154,7 +1186,7 @@ void KillChildrenExit(int signum){
 
   fflush(NULL);
   fprintf(sp0,"Parent received signal %d\nKilling children and exiting\n",
-	  signum);
+          signum);
   fflush(NULL);
   signal(SIGTERM,SIG_IGN);
   kill(0,SIGTERM);
@@ -1197,14 +1229,14 @@ int StartTimers(time_t *tstart, double *cputimestart){
   *cputimestart=-1.0;
   if(!getrusage(RUSAGE_SELF,&usagebuf)){
     *cputimestart=(double )(usagebuf.ru_utime.tv_sec
-			    +(usagebuf.ru_utime.tv_usec/(double )1000000)
-			    +usagebuf.ru_stime.tv_sec
-			    +(usagebuf.ru_stime.tv_usec/(double )1000000));
+                            +(usagebuf.ru_utime.tv_usec/(double )1000000)
+                            +usagebuf.ru_stime.tv_sec
+                            +(usagebuf.ru_stime.tv_usec/(double )1000000));
     if(!getrusage(RUSAGE_CHILDREN,&usagebuf)){
       *cputimestart+=(double )(usagebuf.ru_utime.tv_sec
-			       +(usagebuf.ru_utime.tv_usec/(double )1000000)
-			       +usagebuf.ru_stime.tv_sec
-			       +(usagebuf.ru_stime.tv_usec/(double )1000000));
+                               +(usagebuf.ru_utime.tv_usec/(double )1000000)
+                               +usagebuf.ru_stime.tv_sec
+                               +(usagebuf.ru_stime.tv_usec/(double )1000000));
     }
   }
 
@@ -1233,14 +1265,14 @@ int DisplayElapsedTime(time_t tstart, double cputimestart){
   cputime=-1.0;
   if(!getrusage(RUSAGE_CHILDREN,&usagebuf)){
     cputime=(double )(usagebuf.ru_utime.tv_sec
-		       +(usagebuf.ru_utime.tv_usec/(double )1000000)
-		       +usagebuf.ru_stime.tv_sec
-		       +(usagebuf.ru_stime.tv_usec/(double )1000000));
+                       +(usagebuf.ru_utime.tv_usec/(double )1000000)
+                       +usagebuf.ru_stime.tv_sec
+                       +(usagebuf.ru_stime.tv_usec/(double )1000000));
     if(!getrusage(RUSAGE_SELF,&usagebuf)){
       cputime+=(double )(usagebuf.ru_utime.tv_sec
-			 +(usagebuf.ru_utime.tv_usec/(double )1000000)
-			 +usagebuf.ru_stime.tv_sec
-			 +(usagebuf.ru_stime.tv_usec/(double )1000000));
+                         +(usagebuf.ru_utime.tv_usec/(double )1000000)
+                         +usagebuf.ru_stime.tv_sec
+                         +(usagebuf.ru_stime.tv_usec/(double )1000000));
     }
   }
   tstop=time(NULL);
@@ -1250,7 +1282,7 @@ int DisplayElapsedTime(time_t tstart, double cputimestart){
     minutes=(long )floor((cputime-3600*hours)/60);
     seconds=cputime-3600*hours-60*minutes;
     fprintf(sp1,"Elapsed processor time:   %ld:%02ld:%05.2f\n",
-	    hours,minutes,seconds);
+            hours,minutes,seconds);
   }
   if(tstart>0 && tstop>0){
     walltime=tstop-tstart;
@@ -1258,7 +1290,7 @@ int DisplayElapsedTime(time_t tstart, double cputimestart){
     minutes=(long )floor((walltime-3600*hours)/60);
     seconds=walltime-3600*hours-60*minutes;
     fprintf(sp1,"Elapsed wall clock time:  %ld:%02ld:%02ld\n",
-	    hours,minutes,(long )seconds);
+            hours,minutes,(long )seconds);
   }
 
   /* done */
