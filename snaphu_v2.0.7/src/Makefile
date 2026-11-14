@@ -16,7 +16,7 @@
 CC		=	cc
 OPTIMFLAGS	=	-O3
 DEBUGFLAGS	=	-ggdb
-CFLAGS		=	$(OPTIMFLAGS) -Wall # -Wuninitialized -m64 -D NO_CS2
+CFLAGS		=	-arch x86_64 $(OPTIMFLAGS) -Wall # -arch arm64 -Wuninitialized -m64 -D NO_CS2
 LIBS		=	-lm 
 BINDIR		=	../bin
 INSTALLDIR	=	/usr/local/bin
