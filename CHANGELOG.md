@@ -12,6 +12,10 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   * `back_projection` provides GSLC back-projection processing
   * `time_series` process Sentinel-1 GSLC time series.
 
+### Fixed
+- Updated snaphu from 2.0b0.0.0 to 2.0.7. 
+- Fix bugs in the time series processing.
+
 ## [0.4.3]
 ### Fixed
 - made the auxiliary script for PS processing executable.

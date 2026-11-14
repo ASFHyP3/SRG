@@ -49,4 +49,20 @@ for intlist in list:
 for i in range(num):
     unwcommand[i].wait()
 
+# every .int must have a .unw of the same size (both 8 bytes/pixel); otherwise stop here with a clear
+# message instead of a 'Non-existing record number' error later in regressheight/sbas
+fint = open(intfiles,'r')
+failed = []
+for line in fint.readlines():
+    intfile = line.split()[0]
+    unwfile = intfile.replace('.int','.unw')
+    if not os.path.exists(unwfile) or os.path.getsize(unwfile) != os.path.getsize(intfile):
+        failed.append(unwfile)
+fint.close()
+if len(failed) > 0:
+    print('ERROR: unwrapping failed for',len(failed),'interferograms:')
+    for unwfile in failed:
+        print('  ',unwfile)
+    sys.exit(1)
+
 print('Interferograms unwrapped')

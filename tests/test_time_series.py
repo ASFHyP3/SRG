@@ -16,6 +16,18 @@ def test_create_time_series_product_name():
     assert name.startswith('S1_SRG_SBAS_35_E101_5_S34_3_E056_9_S25_9_001_010')
 
 
+def test_create_time_series_product_name_relative_orbit():
+    bounds = [-100.0, 45.0, -90.0, 50.0]
+    granules = {
+        'S1B_IW_RAW__0SSH_20211214T025713_20211214T025750_030015_03956A_87B3.zip': '_SBAS_64_',
+        'S1C_IW_RAW__0SDV_20250411T045539_20250411T045608_001841_003701_E9CA.zip': '_SBAS_95_',
+        'S1C_IW_RAW__0SDV_20250426T001333_20250426T001406_002057_004401_7112.zip': '_SBAS_136_',
+        'S1C_IW_RAW__0SDV_20250418T044734_20250418T044802_001943_003D53_BADC.zip': '_SBAS_22_',
+    }
+    for granule, track in granules.items():
+        assert track in time_series.create_time_series_product_name([granule], bounds)
+
+
 def test_get_size_from_dem(tmp_path):
     rsc_content = """
     WIDTH          1235
