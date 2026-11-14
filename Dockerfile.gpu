@@ -69,7 +69,7 @@ SHELL ["/bin/bash", "-l", "-c"]
 USER ${CONDA_UID}
 WORKDIR /home/conda/
 
-COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg/snaphu_v2.0b0.0.0/bin/snaphu /srg/bin/snaphu
+COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg/snaphu_v2.0.7/bin/snaphu /srg/bin/snaphu
 COPY --chown=${CONDA_UID}:${CONDA_GID} --from=builder /srg /srg
 
 RUN mamba env create -f /srg/environment.yml && \

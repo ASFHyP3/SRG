@@ -1,3 +1,56 @@
+Notable changes in v2.0.7 since v2.0.6:
+---------------------------------------
+
+* Fix bug that causes "out of memory" error when when there are no
+  connected components in the first two tiles.
+
+
+Notable changes in v2.0.6 since v2.0.5:
+---------------------------------------
+
+* Change conditions for breaking out of outermost loop over flow
+  increments in optimizer to avoid possible infinite loop issue.
+
+
+Notable changes in v2.0.5 since v2.0.4:
+---------------------------------------
+
+* Change definition of connectivity of nodes that are completely separated by
+  masked pixels to fix bugs that could cause crash and/or infinite
+  looping when regions are separated by single row or column of masked
+  pixels.
+
+
+Notable changes in v2.0.4 since v2.0.3:
+---------------------------------------
+
+* Fixed logic error that would sometimes cause crash in MCF solver
+  when flow went from ground node to lower right corner node.
+
+* Untabify source files (whitespace changes only)
+
+
+Notable changes in v2.0.3 since v2.0.2:
+---------------------------------------
+
+* Fixed limit-checking error that would sometimes cause segmentation fault when
+  width of masked area was only one pixel at right or bottom edges.
+  
+
+Notable changes in v2.0.2 since v2.0.1:
+---------------------------------------
+
+* Fixed indexing error that would sometimes cause segmentation fault when
+  discharging boundary of masked region.
+  
+
+Notable changes in v2.0.1 since v2.0.0:
+---------------------------------------
+
+* Bug fixes affecting externally generated costs read from a file and
+  handling of zero-cost primary and secondary arcs.
+  
+
 Notable changes in v2.0 since v1.4.2:
 -------------------------------------
 
@@ -22,12 +75,13 @@ Notable changes in v2.0 since v1.4.2:
   will not generally be reliable; often it will be whatever value is
   left from the initialization.
 
-  The user can indicate masking by setting the magnitude of a pixel to
-  zero in the input file or by specifying a separate binary mask via
-  the new -M option or the new BYTEMASKFILE keyword.  See the comments
-  in the template configuration file for the BYTEMASKFILE keyword for
-  a full description of the file format.  A fixed number of pixels at
-  each edge of the input file can also be masked via the EDGEMASKTOP,
+  The user can indicate masking by setting the magnitudes of the
+  complex values of pixels to be masked to zero in the input file or
+  by specifying a separate binary mask via the new -M option or the
+  new BYTEMASKFILE keyword.  See the comments in the template
+  configuration file for the BYTEMASKFILE keyword for a full
+  description of the file format.  A fixed number of pixels at each
+  edge of the input file can also be masked via the EDGEMASKTOP,
   EDGEMASKBOT, EDGEMASKLEFT, and EDGEMASKRIGHT keywords.
 
   If masked pixels separate regions of unmasked pixels, the unwrapped
@@ -66,6 +120,25 @@ Notable changes in v2.0 since v1.4.2:
   the new -k option on the command line or set the RMTMPTILE keyword
   to FALSE in a config file to keep temporary tile files.
 
+* A warning is now displayed if running in tile mode and the tile
+  overlap is less than a semi-arbitrary constant warning threshold.  A
+  suggestion is displayed about increasing overlap or tile size if
+  edge artifacts are present if the overlap is less than the tile size.
+
+* Connected components are now supported in tile mode.  The connected
+  components are assembled from the connected components of individual
+  tiles and renumbered to be unique, but they will break at tile
+  boundaries.  It is possible that a component will not be fully
+  connected in the assembled output if the component was connected
+  only in the tile overlap area that was discarded while assembling
+  the full output.
+
+* The connected components output file may be written as either 1-byte
+  unsigned integers or 4-byte (32-bit) unsigned integers via the
+  CONNCOMPOUTTYPE keyword.  Using 4-byte values allows more than 255
+  connected components to be defined, although the default is still to
+  use 1-byte values for backward compatibility.
+
 * Support for Lp-norm cost functions has been added.  Note, however,
   that congruence is still enforced, meaning that the unwrapped phase
   will differ from the wrapped phase by only integer numbers cycles.
@@ -78,7 +151,7 @@ Notable changes in v2.0 since v1.4.2:
   This code has not been well tested and users are advised to use this
   code with only the lowest of expectations.
 
-* The SOURCEMODE keyword and associated functionality has been removed
+* The SOURCEMODE keyword and associated functionality have been removed
   due to changes in the source selection algorithm to allow the
   unwrapping of multiple regions that are disconnected by masked
   pixels.

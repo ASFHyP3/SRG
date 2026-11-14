@@ -22,11 +22,13 @@ def readxmlparam(xmllines, param):
             #print istart, istop, '\n'
             return value
 
-def timeinseconds(timestring):
+def timeinseconds(timestring, refdate):
 #    dt = datetime.strptime(timestring, 'TAI=%Y-%m-%dT%H:%M:%S.%f')
     dt = datetime.strptime(timestring, 'UTC=%Y-%m-%dT%H:%M:%S.%f')
 #    dt = datetime.strptime(timestring, 'UT1=%Y-%m-%dT%H:%M:%S.%f')
-    secs=dt.hour*3600+dt.minute*60+dt.second+dt.microsecond/1000000.0
+    # seconds from midnight of the acquisition date, so vectors from the
+    # neighboring days are negative or >86400 rather than wrapping
+    secs=(dt-refdate).total_seconds()
     return secs
 
 if len(sys.argv) < 2:
@@ -72,13 +74,14 @@ for i in range(len(start)):
     vy.append(readxmlparam(statelines,'VY unit'))
     vz.append(readxmlparam(statelines,'VZ unit'))
     
+refdate=datetime.strptime(os.path.basename(SAFEname).split('_')[5][:8],'%Y%m%d')
 orbinfo=open(SAFEname+'.orbtiming.full','w')
 orbinfo.write('0 \n')
 orbinfo.write('0 \n')
 orbinfo.write('0 \n')
 orbinfo.write(str(len(start))+'\n')
 for i in range(len(start)):
-    orbinfo.write(str(timeinseconds(time[i]))+' '+str(x[i])+' '+str(y[i])+' '+str(z[i])+' '+str(vx[i])+' '+str(vy[i])+' '+str(vz[i])+' 0.0 0.0 0.0')
+    orbinfo.write(str(timeinseconds(time[i],refdate))+' '+str(x[i])+' '+str(y[i])+' '+str(z[i])+' '+str(vx[i])+' '+str(vy[i])+' '+str(vz[i])+' 0.0 0.0 0.0')
     orbinfo.write('\n')
 
 orbinfo.close()

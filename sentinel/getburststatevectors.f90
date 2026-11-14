@@ -22,10 +22,10 @@ subroutine getburststatevectors(startime,SAFEname)
   end if
   
   !  read in all state vectors
-  ifirst=0
+  ifirst=1
   do i=1,nvect
      read(21,*)time(i),xx(:,i),vv(:,i),aa(:,i)
-     if(ifirst.eq.0)then
+     if(ifirst.eq.1)then
         if(i.ge.2)then
            if(time(i).lt.time(i-1))ifirst=i
         end if

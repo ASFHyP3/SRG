@@ -70,7 +70,7 @@ gfortran -o psinterp psinterp.f90 -fopenmp
 echo 'Built cosine_sim and psinterp in ps directory'
 
 cd ..
-cd snaphu_v2.0b0.0.0/src
+cd snaphu_v2.0.7/src
 make CFLAGS=-O3 -s
 
 cd ..

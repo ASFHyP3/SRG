@@ -139,7 +139,7 @@ PROGRAM sbas
     !  compute the reference phase for ith interferogram
      phase_ref(i)=0.
      do k=1,n_refs
-        phase_ref(i)=phase_ref(i)+phase(nr+ref_locs(1,k),ref_locs(2,k),i)/n_refs
+        phase_ref(i)=phase_ref(i)+phase(ref_locs(1,k),ref_locs(2,k),i)/n_refs
      end do
 
      ! subtract reference phase from each interferogram
