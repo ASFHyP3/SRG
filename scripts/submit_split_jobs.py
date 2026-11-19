@@ -18,20 +18,20 @@ def submit_gslcs(
     bucket_prefix: str,
 ) -> hyp3_sdk.Job:
     hyp3 = hyp3_sdk.HyP3(hyp3_url)
-    batches = int(len(granules) / 100) + 1
+    # one job per pass (platform + absolute orbit): back_projection merges same-date frames into one GSLC
+    passes: dict[tuple[str, str], list[str]] = {}
+    for granule in granules:
+        parts = granule.split('_')
+        passes.setdefault((parts[0], parts[7]), []).append(granule)
+    groups = list(passes.values())
     sub_jobs = []
-    for batch in range(batches):
-        ini = batch * 100
-        if batch == batches - 1:
-            fin = batch * 100 + len(granules) % 100
-        else:
-            fin = (batch + 1) * 100
+    for ini in range(0, len(groups), 100):
         jobs = []
-        for granule in granules[ini:fin]:
+        for group in groups[ini : ini + 100]:
             prepared_job = {
                 'job_type': 'SRG_GSLC',
                 'job_parameters': {
-                    'granules': [granule],
+                    'granules': group,
                     'bounds': [min_lon, min_lat, max_lon, max_lat],
                 },
             }
