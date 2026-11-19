@@ -296,6 +296,11 @@ def package_time_series(
         'parameters',
         'ref_locs',
         'dem.rsc',
+        # proc_home sbas lists, so its display/ and gps/ tools run on the product
+        'jdlist',
+        'unwlist',
+        'intlist',
+        'Bperp.out',
         # Datasets
         'dem',
         'locs',
