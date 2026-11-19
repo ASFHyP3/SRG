@@ -3,12 +3,12 @@
 1. export_hdf5: reads the SRG binaries in the product (dem.rsc, parameters, dem, sbas_list, geolist, stackmht,
    ref_locs, *.cc, displacement, npts, orbtiming) and writes <out>/hdf5/*.h5
 2. make_browse: reads only <out>/hdf5/ and writes <out>/browse/*.png, *.kmz
-3. export_interferograms: per pair <d1>_<d2>_amp.tif and <d1>_<d2>_wrapped_phase.kmz into <out>/interferograms/,
+3. export_interferograms: per pair <d1>_<d2>_amp.tif and <d1>_<d2>_wrapped_phase.kmz into <out>/browse/,
    as the hyp3-isce2 _amp.tif / _wrapped_phase.kmz (skipped when the product has no *.amp / *.int)
 
 Runs at the end of the HyP3 job and on any downloaded, unzipped product:
 
-    python postprocess.py sbas --out-dir .          # writes ./hdf5/, ./browse/ and ./interferograms/
+    python postprocess.py sbas --out-dir .          # writes ./hdf5/ and ./browse/
 """
 
 import argparse
@@ -772,8 +772,8 @@ def postprocess(
     lalo=None,
     wavelength: float = WAVELENGTH_S1,
 ) -> dict:
-    """MintPy-style HDF5 into <out_dir>/hdf5, browse images + KMZ from it into <out_dir>/browse, per-pair amp
-    GeoTIFF + wrapped-phase KMZ into <out_dir>/interferograms.
+    """MintPy-style HDF5 into <out_dir>/hdf5, then browse images + KMZ from it and per-pair amp GeoTIFF +
+    wrapped-phase KMZ into <out_dir>/browse.
 
     Args:
         product_dir: unzipped product directory
@@ -783,7 +783,7 @@ def postprocess(
         wavelength: radar wavelength (m)
 
     Returns:
-        {'hdf5': [...], 'browse': [...], 'interferograms': [...]}
+        {'hdf5': [...], 'browse': [...]}
     """
     product_dir = Path(product_dir)
     out_dir = Path(out_dir) if out_dir else product_dir
@@ -794,11 +794,9 @@ def postprocess(
     )
     h5_files = export_hdf5(prod, out_dir / 'hdf5', orbit)
     del prod
-    return {
-        'hdf5': h5_files,
-        'browse': make_browse(out_dir / 'hdf5', out_dir / 'browse', coh_thresh, lalo),
-        'interferograms': export_interferograms(product_dir, out_dir / 'interferograms'),
-    }
+    browse = make_browse(out_dir / 'hdf5', out_dir / 'browse', coh_thresh, lalo)
+    browse += export_interferograms(product_dir, out_dir / 'browse')
+    return {'hdf5': h5_files, 'browse': browse}
 
 
 def main():

@@ -322,14 +322,14 @@ def package_time_series(
     to_keep += intermediate
     [shutil.copy(ps_sbas_dir / f, product_path / f) for f in to_keep]
 
-    # hdf5/, browse/ and interferograms/ inside the product; a failure here must not lose the product
+    # hdf5/ and browse/ inside the product; a failure here must not lose the product
     try:
         first_geo = (ps_sbas_dir / 'geolist').read_text().split()[0]
         shutil.copy(ps_sbas_dir / first_geo.replace('.geo', '.orbtiming'), product_path / 'orbtiming')
         postprocess.postprocess(product_path)
         shutil.copy(product_path / 'browse' / 'velocity.png', work_dir / f'{product_name}.png')
     except Exception:
-        log.exception('post-processing failed; packaging the product without hdf5/, browse/ and interferograms/')
+        log.exception('post-processing failed; packaging the product without hdf5/ and browse/')
 
     shutil.make_archive(str(product_path), 'zip', product_path)
     return zip_path
