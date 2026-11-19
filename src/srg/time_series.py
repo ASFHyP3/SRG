@@ -326,7 +326,7 @@ def package_time_series(
     try:
         first_geo = (ps_sbas_dir / 'geolist').read_text().split()[0]
         shutil.copy(ps_sbas_dir / first_geo.replace('.geo', '.orbtiming'), product_path / 'orbtiming')
-        postprocess.postprocess(product_path)
+        postprocess.postprocess(product_path, gnss=True)
         shutil.copy(product_path / 'browse' / 'velocity.png', work_dir / f'{product_name}.png')
     except Exception:
         log.exception('post-processing failed; packaging the product without hdf5/ and browse/')

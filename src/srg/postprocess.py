@@ -771,6 +771,8 @@ def postprocess(
     coh_thresh: float = 0.3,
     lalo=None,
     wavelength: float = WAVELENGTH_S1,
+    gnss: bool = False,
+    ref_site: str | None = None,
 ) -> dict:
     """MintPy-style HDF5 into <out_dir>/hdf5, then browse images + KMZ from it and per-pair amp GeoTIFF +
     wrapped-phase KMZ into <out_dir>/browse.
@@ -781,6 +783,8 @@ def postprocess(
         coh_thresh: mean-coherence threshold for color limits and pixel search
         lalo: [(lat, lon), ...] extra time-series pixels (e.g. the volcano); None = peak pixel only
         wavelength: radar wavelength (m)
+        gnss: also compare with NGL GNSS (needs internet) into <out_dir>/browse/gnss_compare.png
+        ref_site: GNSS reference site; None = the site nearest the InSAR reference pixel
 
     Returns:
         {'hdf5': [...], 'browse': [...]}
@@ -796,11 +800,15 @@ def postprocess(
     del prod
     browse = make_browse(out_dir / 'hdf5', out_dir / 'browse', coh_thresh, lalo)
     browse += export_interferograms(product_dir, out_dir / 'browse')
+    if gnss:
+        from srg import gnss as gnss_mod
+
+        browse += gnss_mod.compare(out_dir / 'hdf5', out_dir / 'browse', ref_site, coh_thresh)
     return {'hdf5': h5_files, 'browse': browse}
 
 
 def main():
-    """Entrypoint: python postprocess.py PRODUCT_DIR [--out-dir DIR] [--coh-thresh 0.3] [--lalo LAT LON ...]."""
+    """Entrypoint: python postprocess.py PRODUCT_DIR [--out-dir DIR] [--lalo LAT LON ...] [--gnss]."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('product_dir', type=Path, help='unzipped SRG SBAS product (or sbas work) directory')
     parser.add_argument('--out-dir', type=Path, default=None, help='output root (default: product_dir)')
@@ -815,9 +823,13 @@ def main():
         help='extra time-series pixel, e.g. the volcano; repeat for more (default: peak |velocity| pixel only)',
     )
     parser.add_argument('--wavelength', type=float, default=WAVELENGTH_S1, help='radar wavelength (m)')
+    parser.add_argument('--gnss', action='store_true', help='also compare with NGL GNSS (needs internet)')
+    parser.add_argument('--ref-site', default=None, help='GNSS reference site (default: nearest to InSAR ref pixel)')
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format='%(message)s')
-    out = postprocess(args.product_dir, args.out_dir, args.coh_thresh, args.lalo, args.wavelength)
+    out = postprocess(
+        args.product_dir, args.out_dir, args.coh_thresh, args.lalo, args.wavelength, args.gnss, args.ref_site
+    )
     for kind, files in out.items():
         if files:
             print(f'{kind}: {len(files)} files in {files[0].parent}')
