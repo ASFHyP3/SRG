@@ -13,7 +13,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
      `avgAmplitude.h5`, `geometryGeo.h5` (height, incidenceAngle, azimuthAngle, slantRangeDistance),
      `numInvIfgram.h5`, `coherenceSpatialAvg.txt`; referenced to one pixel (REF_Y/REF_X).
   2. `browse/` from `hdf5/` only: PNG + KMZ for elevation, avgCoherence, avgAmplitude, avgPhaseVelocity, velocity,
-     dispCumulative, velocityStd; plus network.png and dispPixel.png.
+     dispCumulative, velocityStd; plus network.png and dispTimeseries.png.
   - `<product>.png` (velocity) uploaded as the HyP3 browse image.
   - Reads only files in the product zip, so it also runs on downloaded products. Failures are logged; the product
     is still uploaded.

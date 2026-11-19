@@ -154,7 +154,7 @@ def test_make_browse(tmp_path):
         'elevation',
     ):
         assert f'{name}.png' in names and f'{name}.kmz' in names
-    assert {'network.png', 'dispPixel.png'} <= names
+    assert {'network.png', 'dispTimeseries.png'} <= names
     assert all(f.exists() for f in files)
     with zipfile.ZipFile(tmp_path / 'browse' / 'velocity.kmz') as z:
         assert set(z.namelist()) == {'doc.kml', 'velocity_raster.png', 'velocity_legend.png'}

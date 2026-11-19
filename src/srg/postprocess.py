@@ -28,7 +28,6 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
-from matplotlib.patches import Circle
 from matplotlib.ticker import AutoMinorLocator, MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -411,9 +410,11 @@ def normalize_amp(amp: np.ndarray, exponent: float = 0.3, denom_fac: float = 2.0
 
 
 def blend_multiply(data, cmap, vmin, vmax, shade) -> np.ndarray:
-    """Colormap `data` then multiply by `shade` in [0,1] -> (naz, nr, 3) RGB."""
-    rgb = plt.get_cmap(cmap)(plt.Normalize(vmin, vmax)(data))[..., :3]
-    return rgb * shade[..., None]
+    """Colormap `data` then multiply by `shade` in [0,1] -> (naz, nr, 4) RGBA, NaN transparent."""
+    rgba = plt.get_cmap(cmap)(plt.Normalize(vmin, vmax)(data))
+    rgba[..., :3] *= shade[..., None]
+    rgba[..., 3] = np.isfinite(data)
+    return rgba
 
 
 def add_colorbar(im, ax, label='m', extend='both', size='4%', pad=0.1, cticks=None):
@@ -432,6 +433,7 @@ def image_show(data, ax, extent, cmap='viridis', vlim=(None, None), clabel='', s
     if shade is None:
         im = ax.imshow(data, extent=extent, cmap=cmap, vmin=vmin, vmax=vmax, interpolation='none')
     else:
+        ax.imshow(shade, extent=extent, cmap='gray', vmin=0, vmax=1, interpolation='none')
         ax.imshow(blend_multiply(data, cmap, vmin, vmax, shade), extent=extent, interpolation='none')
         im = cm.ScalarMappable(norm=plt.Normalize(vmin, vmax), cmap=cmap)
     extend = ('min' if np.nanmin(data) < vmin else '') + ('max' if np.nanmax(data) > vmax else '')
@@ -554,14 +556,14 @@ def plot_network(dates, bperp, pairs, coh_thresh: float, out_path: Path) -> None
     plt.close(fig)
 
 
-def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None) -> list[Path]:
+def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.3, lalo=None) -> list[Path]:
     """Write browse PNGs, plus a KMZ for every 2-D map, from the MintPy HDF5 files only.
 
     Args:
         h5_dir: directory written by export_hdf5
         out_dir: output directory
         coh_thresh: mean-coherence threshold for color limits, pixel search and network colors
-        lalo: (lat, lon) of the time-series pixel; None = auto
+        lalo: [(lat, lon), ...] extra time-series pixels (e.g. the volcano); None = peak pixel only
 
     Returns:
         written files
@@ -590,6 +592,12 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None)
     height = read_h5(h5_dir / 'geometryGeo.h5', 'height')
     demshade = hillshade(height)
     coh_mask = coherence > coh_thresh
+    masked = {
+        'stack_velocity': np.where(coh_mask, stack_velocity, np.nan),
+        'velocity': np.where(coh_mask, velocity, np.nan),
+        'final': np.where(coh_mask, final, np.nan),
+        'velocity_std': np.where(coh_mask, velocity_std, np.nan),
+    }
 
     # name, title, data, cmap, vlim, colorbar label, shade (png), shade (kmz), mark reference pixel
     maps = [
@@ -599,7 +607,7 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None)
         (
             'avgPhaseVelocity',
             'LOS velocity (interferogram stacking)',
-            stack_velocity,
+            masked['stack_velocity'],
             'RdYlBu_r',
             get_vlim(stack_velocity, coh_mask),
             'm/year',
@@ -610,7 +618,7 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None)
         (
             'velocity',
             'LOS velocity (linear fit to time series)',
-            velocity,
+            masked['velocity'],
             'RdYlBu_r',
             get_vlim(velocity, coh_mask),
             'm/year',
@@ -621,7 +629,7 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None)
         (
             'dispCumulative',
             'Final cumulative LOS displacement',
-            final,
+            masked['final'],
             'RdYlBu_r',
             get_vlim(final, coh_mask),
             'm',
@@ -632,7 +640,7 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None)
         (
             'velocityStd',
             'LOS velocity standard error',
-            velocity_std,
+            masked['velocity_std'],
             'magma_r',
             (0, float(np.nanquantile(velocity_std, 0.998))),
             'm/year',
@@ -667,50 +675,56 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.5, lalo=None)
     ]
     plot_network(dates, bperp, pairs, coh_thresh, out_dir / 'network.png')
 
-    # pixel time series: auto = highest |velocity| coherent pixel near the center
-    r = nr // 3
-    if lalo is None:
-        r0, r1, c0, c1 = max(naz // 2 - r, 0), naz // 2 + r, max(nr // 2 - r, 0), nr // 2 + r
-        box = np.where(coh_mask[r0:r1, c0:c1], np.abs(velocity[r0:r1, c0:c1]), -np.inf)
-        by, bx = np.unravel_index(np.argmax(box), box.shape)
-        iy, ix = r0 + int(by), c0 + int(bx)
-    else:
-        iy = int(np.clip(round((lalo[0] - y0) / dy), 1, naz - 2))
-        ix = int(np.clip(round((lalo[1] - x0) / dx), 1, nr - 2))
-    ts = read_h5(ts_file, 'timeseries', np.s_[:, max(iy - 1, 0) : iy + 2, max(ix - 1, 0) : ix + 2]).mean(axis=(1, 2))
-    px_lon, px_lat = x0 + ix * dx, y0 + iy * dy
+    # pixel time series: highest |velocity| coherent pixel, plus the optional lalo pixels
+    iy, ix = np.unravel_index(np.argmax(np.where(coh_mask, np.abs(velocity), -np.inf)), velocity.shape)
+    pixels = [(int(iy), int(ix))]
+    for lat, lon in lalo or []:
+        row, col = round((lat - y0) / dy), round((lon - x0) / dx)
+        pixels.append((int(np.clip(row, 1, naz - 2)), int(np.clip(col, 1, nr - 2))))
 
-    fig, axs = plt.subplots(ncols=2, figsize=[12, 4], gridspec_kw={'width_ratios': [3.6, 6.4]})
+    # map panel width follows the map aspect so it fills the panel height
+    map_w = 3.4 * (nr * abs(dx)) / (naz * abs(dy))
+    fig, axs = plt.subplots(ncols=2, figsize=[map_w * 1.15 + 6.4, 4], gridspec_kw={'width_ratios': [map_w * 1.15, 6.4]})
     axs[0].set_title('Final LOS displacement')
     image_show(
-        final, axs[0], extent, cmap='RdYlBu_r', vlim=get_vlim(final, coh_mask), clabel='m', shade=demshade, cticks=5
+        masked['final'],
+        axs[0],
+        extent,
+        cmap='RdYlBu_r',
+        vlim=get_vlim(final, coh_mask),
+        clabel='m',
+        shade=demshade,
+        cticks=5,
     )
-    axs[0].scatter(px_lon, px_lat, marker='^', ec='k', fc='lime', s=50, zorder=3)
     axs[0].plot(*ref_lonlat, 'ks', ms=5, mfc='none')
-    if lalo is None:
-        center = (x0 + (nr // 2) * dx, y0 + (naz // 2) * dy)
-        axs[0].add_patch(Circle(center, r * abs(dx), fill=False, ec='lightgray', lw=1.5, zorder=2))
     ax = axs[1]
-    ax.plot(dates, ts, color='grey', lw=2, marker='o', ms=6, mfc='C0', mec='k', alpha=0.8, zorder=2)
+    for k, (iy, ix) in enumerate(pixels):
+        color = plt.get_cmap('tab10')(k % 10)
+        box = np.s_[:, max(iy - 1, 0) : iy + 2, max(ix - 1, 0) : ix + 2]
+        ts = read_h5(ts_file, 'timeseries', box).mean(axis=(1, 2))
+        lat, lon = y0 + iy * dy, x0 + ix * dx
+        axs[0].scatter(lon, lat, marker='^', ec='k', fc=color, s=50, zorder=3)
+        label = f'{lat:.3f}°N, {lon:.3f}°E ({velocity[iy, ix]:.3f} m/yr)'
+        ax.plot(dates, ts, color='grey', lw=2, marker='o', ms=6, mfc=color, mec='k', alpha=0.8, label=label)
+    ax.legend(fontsize=10)
     ax.set_xlabel('date')
     ax.set_ylabel('LOS displacement (m)')
-    ax.set_title(f'{px_lat:.3f}°N, {px_lon:.3f}°E (velo={velocity[iy, ix]:.3f} m/yr)')
     ax.xaxis.set_major_locator(mdates.YearLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
     ax.xaxis.set_minor_locator(mdates.MonthLocator())
     ax.tick_params(axis='both', which='major', direction='in', length=5, width=1.2, top=True, right=True)
     ax.tick_params(axis='both', which='minor', direction='in', length=3, width=1, top=True, right=True)
     plt.tight_layout()
-    fig.savefig(out_dir / 'dispPixel.png', dpi=150, bbox_inches='tight')
+    fig.savefig(out_dir / 'dispTimeseries.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    return [*written, out_dir / 'network.png', out_dir / 'dispPixel.png']
+    return [*written, out_dir / 'network.png', out_dir / 'dispTimeseries.png']
 
 
 # ================================================================ driver
 def postprocess(
     product_dir: Path,
     out_dir: Path | None = None,
-    coh_thresh: float = 0.5,
+    coh_thresh: float = 0.3,
     lalo=None,
     wavelength: float = WAVELENGTH_S1,
 ) -> dict:
@@ -720,7 +734,7 @@ def postprocess(
         product_dir: unzipped product directory
         out_dir: output root (default: product_dir)
         coh_thresh: mean-coherence threshold for color limits and pixel search
-        lalo: (lat, lon) of the time-series pixel; None = auto
+        lalo: [(lat, lon), ...] extra time-series pixels (e.g. the volcano); None = peak pixel only
         wavelength: radar wavelength (m)
 
     Returns:
@@ -739,18 +753,19 @@ def postprocess(
 
 
 def main():
-    """Entrypoint: python postprocess.py PRODUCT_DIR [--out-dir DIR] [--coh-thresh 0.5] [--lalo LAT LON]."""
+    """Entrypoint: python postprocess.py PRODUCT_DIR [--out-dir DIR] [--coh-thresh 0.3] [--lalo LAT LON ...]."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('product_dir', type=Path, help='unzipped SRG SBAS product (or sbas work) directory')
     parser.add_argument('--out-dir', type=Path, default=None, help='output root (default: product_dir)')
-    parser.add_argument('--coh-thresh', type=float, default=0.5, help='mean-coherence threshold (default: 0.5)')
+    parser.add_argument('--coh-thresh', type=float, default=0.3, help='mean-coherence threshold (default: 0.3)')
     parser.add_argument(
         '--lalo',
         type=float,
         nargs=2,
+        action='append',
         metavar=('LAT', 'LON'),
         default=None,
-        help='time-series pixel (default: highest |velocity| coherent pixel near center)',
+        help='extra time-series pixel, e.g. the volcano; repeat for more (default: peak |velocity| pixel only)',
     )
     parser.add_argument('--wavelength', type=float, default=WAVELENGTH_S1, help='radar wavelength (m)')
     args = parser.parse_args()
