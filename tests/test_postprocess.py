@@ -167,6 +167,29 @@ def test_postprocess(tmp_path):
     assert len(out['hdf5']) == 8
 
 
+def test_export_interferograms(tmp_path):
+    prod = write_product(tmp_path / 'prod')
+    amp = np.full((NAZ, NR), 2 + 8j, np.complex64)  # amplitudes 2 and 8 -> sqrt(2 * 8) = 4
+    amp.tofile(prod / '20250101_20250113.amp')
+    igram = np.full((NAZ, NR), np.exp(1j * 0.5), np.complex64)
+    igram[0, 0] = 0
+    igram.tofile(prod / '20250101_20250113.int')
+
+    out = postprocess.export_interferograms(prod, tmp_path / 'ifg')
+    assert [p.name for p in out] == ['20250101_20250113_amp.tif', '20250101_20250113_wrapped_phase.kmz']
+    ds = postprocess.gdal.Open(str(out[0]))
+    np.testing.assert_allclose(ds.ReadAsArray(), 4)
+    assert ds.GetGeoTransform() == (-92.137, 0.000277777776, 0, 15.155, 0, -0.00027777778)
+    assert ds.GetRasterBand(1).GetNoDataValue() == 0
+    with zipfile.ZipFile(out[1]) as z:
+        assert 'doc.kml' in z.namelist()
+
+
+def test_export_interferograms_without_pairs(tmp_path):
+    assert postprocess.export_interferograms(write_product(tmp_path / 'prod'), tmp_path / 'ifg') == []
+    assert not (tmp_path / 'ifg').exists()
+
+
 def write_orbtiming(path, lat, lon, inc=35.0, az=102.0, rng=800e3, speed=7000.0):
     """Straight-line orbit seen from (lat, lon, 0) with LOS incidence `inc`, azimuth `az` (MintPy conventions)."""
     la, lo = np.radians(lat), np.radians(lon)

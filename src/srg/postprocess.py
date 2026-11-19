@@ -3,10 +3,12 @@
 1. export_hdf5: reads the SRG binaries in the product (dem.rsc, parameters, dem, sbas_list, geolist, stackmht,
    ref_locs, *.cc, displacement, npts, orbtiming) and writes <out>/hdf5/*.h5
 2. make_browse: reads only <out>/hdf5/ and writes <out>/browse/*.png, *.kmz
+3. export_interferograms: per pair <d1>_<d2>_amp.tif and <d1>_<d2>_wrapped_phase.kmz into <out>/interferograms/,
+   as the hyp3-isce2 _amp.tif / _wrapped_phase.kmz (skipped when the product has no *.amp / *.int)
 
 Runs at the end of the HyP3 job and on any downloaded, unzipped product:
 
-    python postprocess.py sbas --out-dir .          # writes ./hdf5/ and ./browse/
+    python postprocess.py sbas --out-dir .          # writes ./hdf5/, ./browse/ and ./interferograms/
 """
 
 import argparse
@@ -30,9 +32,11 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.ticker import AutoMinorLocator, MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from osgeo import gdal, osr
 
 
 log = logging.getLogger(__name__)
+gdal.UseExceptions()
 
 # Sentinel-1 C-band, c / 5.405 GHz; same value as proc_home sentinel/burstparams.f90
 WAVELENGTH_S1 = 0.05546576
@@ -720,6 +724,46 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.3, lalo=None)
     return [*written, out_dir / 'network.png', out_dir / 'dispTimeseries.png']
 
 
+# ================================================================ 3. interferograms -> amp GeoTIFF + wrapped-phase KMZ
+def write_tif(data: np.ndarray, rsc: dict, out_path: Path) -> Path:
+    """Float32 GeoTIFF on the dem.rsc lat/lon grid, as hyp3-isce2 (tiled, LZW, nodata 0)."""
+    ds = gdal.GetDriverByName('GTiff').Create(
+        str(out_path), data.shape[1], data.shape[0], 1, gdal.GDT_Float32, ['TILED=YES', 'COMPRESS=LZW']
+    )
+    ds.SetGeoTransform((rsc['X_FIRST'], rsc['X_STEP'], 0, rsc['Y_FIRST'], 0, rsc['Y_STEP']))
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4326)
+    ds.SetProjection(srs.ExportToWkt())
+    band = ds.GetRasterBand(1)
+    band.SetNoDataValue(0)
+    band.WriteArray(data.astype(np.float32))
+    ds = None
+    return out_path
+
+
+def export_interferograms(product_dir: Path, out_dir: Path) -> list[Path]:
+    """Per pair <d1>_<d2>_amp.tif (sqrt(amp1 * amp2)) and <d1>_<d2>_wrapped_phase.kmz, as hyp3-isce2 products.
+
+    .amp and .int are complex64 (naz, nr): .amp real/imag = amplitude of the two SLCs (int/crossmul.f90).
+    """
+    rsc = load_rsc(product_dir / 'dem.rsc')
+    nr, naz = rsc['WIDTH'], rsc['FILE_LENGTH']
+    x0, dx, y0, dy = rsc['X_FIRST'], rsc['X_STEP'], rsc['Y_FIRST'], rsc['Y_STEP']
+    extent = [x0, x0 + nr * dx, y0 + naz * dy, y0]
+    amp_files = sorted(product_dir.glob('*.amp'))
+    if amp_files:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for amp_file in amp_files:
+        pair = amp_file.stem
+        amp = np.fromfile(amp_file, dtype=np.complex64).reshape(naz, nr)
+        written.append(write_tif(np.sqrt(amp.real * amp.imag), rsc, out_dir / f'{pair}_amp.tif'))
+        igram = np.fromfile(product_dir / f'{pair}.int', dtype=np.complex64).reshape(naz, nr)
+        phase = np.where(igram != 0, np.angle(igram), np.nan)
+        written.append(write_kmz(phase, extent, 'jet', (-np.pi, np.pi), 'rad', out_dir / f'{pair}_wrapped_phase.kmz'))
+    return written
+
+
 # ================================================================ driver
 def postprocess(
     product_dir: Path,
@@ -728,7 +772,8 @@ def postprocess(
     lalo=None,
     wavelength: float = WAVELENGTH_S1,
 ) -> dict:
-    """MintPy-style HDF5 into <out_dir>/hdf5, then browse images + KMZ from it into <out_dir>/browse.
+    """MintPy-style HDF5 into <out_dir>/hdf5, browse images + KMZ from it into <out_dir>/browse, per-pair amp
+    GeoTIFF + wrapped-phase KMZ into <out_dir>/interferograms.
 
     Args:
         product_dir: unzipped product directory
@@ -738,7 +783,7 @@ def postprocess(
         wavelength: radar wavelength (m)
 
     Returns:
-        {'hdf5': [...], 'browse': [...]}
+        {'hdf5': [...], 'browse': [...], 'interferograms': [...]}
     """
     product_dir = Path(product_dir)
     out_dir = Path(out_dir) if out_dir else product_dir
@@ -749,7 +794,11 @@ def postprocess(
     )
     h5_files = export_hdf5(prod, out_dir / 'hdf5', orbit)
     del prod
-    return {'hdf5': h5_files, 'browse': make_browse(out_dir / 'hdf5', out_dir / 'browse', coh_thresh, lalo)}
+    return {
+        'hdf5': h5_files,
+        'browse': make_browse(out_dir / 'hdf5', out_dir / 'browse', coh_thresh, lalo),
+        'interferograms': export_interferograms(product_dir, out_dir / 'interferograms'),
+    }
 
 
 def main():
@@ -772,7 +821,8 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     out = postprocess(args.product_dir, args.out_dir, args.coh_thresh, args.lalo, args.wavelength)
     for kind, files in out.items():
-        print(f'{kind}: {len(files)} files in {files[0].parent}')
+        if files:
+            print(f'{kind}: {len(files)} files in {files[0].parent}')
 
 
 if __name__ == '__main__':
