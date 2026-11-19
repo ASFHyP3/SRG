@@ -9,6 +9,7 @@ from pathlib import Path
 from secrets import token_hex
 from shutil import copyfile
 
+import numpy as np
 from hyp3lib.aws import upload_file_to_s3
 from hyp3lib.fetch import download_file as download_from_http
 
@@ -152,7 +153,7 @@ def compute_sbas_velocity_solution(
     """Computes the sbas velocity solution from the unwrapped interferograms
 
     Args:
-        threshold: correlation threshold for picking reference points
+        threshold: cosine-similarity threshold for picking reference points
         do_tropo_correction: whether or not to apply tropospheric correction
         unw_shape: tuple containing the width and length from the dem.rsc file
         work_dir: the directory containing the wrapped interferograms
@@ -163,8 +164,15 @@ def compute_sbas_velocity_solution(
     copyfile(work_dir / 'intlist', work_dir / 'unwlist')
     utils.call_stanford_module('util/sed.py', args=['s/int/unw/g', 'unwlist'], work_dir=work_dir)
 
-    ref_point_args = ['unwlist', unw_width, unw_length, threshold]
-    utils.call_stanford_module('int/findrefpoints', args=ref_point_args, work_dir=work_dir)
+    utils.call_stanford_module('ps/refpointsfromsim.py', args=['intlist', unw_width, 2, threshold], work_dir=work_dir)
+    ref_locs = work_dir / 'ref_locs'
+    if not ref_locs.exists() or not ref_locs.read_text().strip():
+        # no reference points: use the 1000 pixels with the highest mean coherence (sbas takes their median)
+        ccs = [work_dir / Path(f).with_suffix('.cc') for f in (work_dir / 'intlist').read_text().split()]
+        coh = sum(np.fromfile(f, np.float32).reshape(unw_length, 2, unw_width)[:, 1, :] for f in ccs)
+        rows, cols = np.unravel_index(np.argsort(coh, axis=None)[-1000:], coh.shape)
+        np.savetxt(ref_locs, np.c_[cols + 1, rows + 1], fmt='%d')
+        log.warning('no reference points from cosine similarity; using the 1000 most coherent pixels')
 
     if do_tropo_correction:
         tropo_correct_args = ['unwlist', unw_width, unw_length]
@@ -184,7 +192,7 @@ def create_time_series(
     work_dir: Path,
     looks: tuple[int, int] = (6, 2),
     baselines: tuple[int, int] = (60, 1000),
-    threshold: float = 0.5,
+    threshold: float = 0.4,
     do_tropo_correction: bool = True,
     process: str = 'sbas',
 ) -> None:
@@ -193,7 +201,7 @@ def create_time_series(
     Args:
         looks: tuple containing the number range looks and azimuth looks
         baselines: tuple containing the time baseline and spatial baseline
-        threshold: correlation threshold for picking reference points
+        threshold: cosine-similarity threshold for picking reference points
         do_tropo_correction: whether or not to apply tropospheric correction
         work_dir: the directory containing the GSLCs to do work in
         process: Time series processing ps or sbas

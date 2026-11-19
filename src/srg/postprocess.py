@@ -236,18 +236,18 @@ def mintpy_metadata(prod: SrgProduct, orbit: str) -> dict:
     }
 
 
-def reference_pixel(prod: SrgProduct) -> tuple[int, int, str]:
-    """MintPy reference pixel (row, col), 0-based.
+def reference_pixel(prod: SrgProduct) -> tuple[int, int, str, bool]:
+    """MintPy reference pixel (row, col), 0-based, and whether the data still need referencing to it.
 
-    With ref_locs: the ref_locs pixel nearest their centroid. sbas.f90 reads phase(nr+x, y, i) from a
-    phase(nr, naz, :) array, i.e. pixel (x, y+1) in 1-based (col, row), so the effective 0-based pixel
-    is (row=y, col=x-1). Without ref_locs (SRG did no re-referencing): highest 5x5 mean coherence, off the edges.
+    With ref_locs (1-based (x, y), as sbas.f90 reads phase(x, y, i)), sbas already referenced every interferogram
+    to the median phase of those points, so the data are kept and the nominal pixel is the ref_locs point whose time
+    series stays closest to 0. Without ref_locs (no referencing in sbas): highest 5x5 mean coherence, off the edges.
     """
     naz, nr = prod.shape
     if len(prod.ref_rc):
-        rc = np.column_stack([np.clip(prod.ref_rc[:, 1], 0, naz - 1), np.clip(prod.ref_rc[:, 0] - 1, 0, nr - 1)])
-        k = np.argmin(np.sum((rc - rc.mean(axis=0)) ** 2, axis=1))
-        return int(rc[k, 0]), int(rc[k, 1]), f'ref_locs pixel nearest centroid of {len(rc)}'
+        rc = np.column_stack([np.clip(prod.ref_rc[:, 1] - 1, 0, naz - 1), np.clip(prod.ref_rc[:, 0] - 1, 0, nr - 1)])
+        k = np.argmin(np.nanmean(prod.displacement[:, rc[:, 0], rc[:, 1]] ** 2, axis=0))
+        return int(rc[k, 0]), int(rc[k, 1]), f'sbas reference: median of {len(rc)} ref_locs', False
     win, edge = 5, 5
     smooth = np.full(prod.shape, -np.inf)
     smooth[win // 2 : naz - win // 2, win // 2 : nr - win // 2] = np.lib.stride_tricks.sliding_window_view(
@@ -255,7 +255,7 @@ def reference_pixel(prod: SrgProduct) -> tuple[int, int, str]:
     ).mean(axis=(2, 3))
     smooth[:edge], smooth[-edge:], smooth[:, :edge], smooth[:, -edge:] = -np.inf, -np.inf, -np.inf, -np.inf
     row, col = np.unravel_index(np.argmax(smooth), prod.shape)
-    return int(row), int(col), f'max {win}x{win} mean coherence, {edge}-px border excluded (ref_locs empty)'
+    return int(row), int(col), f'max {win}x{win} mean coherence, {edge}-px border excluded (ref_locs empty)', True
 
 
 def los_geometry(prod: SrgProduct, orbtiming: Path) -> dict[str, np.ndarray]:
@@ -328,7 +328,7 @@ def export_hdf5(prod: SrgProduct, out_dir: Path, orbit: str) -> list[Path]:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = mintpy_metadata(prod, orbit)
-    row, col, how = reference_pixel(prod)
+    row, col, how, subtract = reference_pixel(prod)
     r = prod.rsc
     meta.update(
         {
@@ -339,7 +339,7 @@ def export_hdf5(prod: SrgProduct, out_dir: Path, orbit: str) -> list[Path]:
             'SRG_REF_METHOD': how,
         }
     )
-    ts = prod.displacement - prod.displacement[:, row : row + 1, col : col + 1]
+    ts = prod.displacement - prod.displacement[:, row : row + 1, col : col + 1] if subtract else prod.displacement
     dates = np.array([f'{d:%Y%m%d}' for d in prod.dates], dtype='S8')
     date12 = f'{dates[0].decode()}_{dates[-1].decode()}'
     bperp = np.array([prod.bperp[d] for d in prod.dates], dtype=np.float32)
@@ -371,7 +371,7 @@ def export_hdf5(prod: SrgProduct, out_dir: Path, orbit: str) -> list[Path]:
         # interferogram stacking (sum phase / sum time, from sbas stackmht), referenced like the time series
         write_h5(
             out_dir / 'avgPhaseVelocity.h5',
-            {'velocity': prod.stack_velocity - prod.stack_velocity[row, col]},
+            {'velocity': prod.stack_velocity - prod.stack_velocity[row, col] * subtract},
             {**meta, 'FILE_TYPE': 'velocity', 'UNIT': 'm/year', 'DATE12': date12},
         ),
         write_h5(
