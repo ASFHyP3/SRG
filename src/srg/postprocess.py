@@ -402,9 +402,9 @@ def read_h5(path: Path, dataset: str, index=()) -> np.ndarray:
         return f[dataset][index]
 
 
-def hillshade(dem: np.ndarray, vert_exag: float = 1, azdeg: float = 315, altdeg: float = 45) -> np.ndarray:
-    """DEM -> grayscale illumination in [0,1]."""
-    return mcolors.LightSource(azdeg=azdeg, altdeg=altdeg).hillshade(dem, vert_exag=vert_exag)
+def hillshade(dem: np.ndarray, vert_exag: float = 1, azdeg: float = 315, altdeg: float = 45, k: float = 0.75):
+    """DEM -> grayscale illumination in [1-k, 1]; k < 1 keeps shaded slopes from going black under the colors."""
+    return 1 - k * (1 - mcolors.LightSource(azdeg=azdeg, altdeg=altdeg).hillshade(dem, vert_exag=vert_exag))
 
 
 def normalize_amp(amp: np.ndarray, exponent: float = 0.3, denom_fac: float = 2.0) -> np.ndarray:
