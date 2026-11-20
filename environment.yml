@@ -15,6 +15,7 @@ dependencies:
   # For running
   - asf_search>=10.0.5
   - hyp3_sdk
+  - h5py
   - hyp3lib>=3,<4
   - matplotlib
   - s1_orbits
