@@ -151,6 +151,8 @@ def main():
     for job in jobs:
         spath, start, end, process, tbaseline, pbaseline, aoi, name = job.split(';')
         path = int(spath)
+        # name may hold the full bucket prefix, e.g. Hawaiian-Emperor-Hotspot-Volcano-Group/Kilauea/a{path}/sbas
+        prefix = name.format(path=path) if '{path}' in name else f'{name}_{path}'
         if 'POLYGON' in aoi:
             min_lon, min_lat, max_lon, max_lat = wkt_to_bbox(aoi)
         else:
@@ -158,7 +160,7 @@ def main():
         granules = get_granules(path, start, end, min_lon, min_lat, max_lon, max_lat)
 
         if args.just_gslc or not args.just_ts:
-            bucket_prefix = f'{name}_{path}/GSLC_granules'
+            bucket_prefix = f'{prefix}/GSLC_granules'
 
             jobs_gslcs += submit_gslcs(
                 granules,
@@ -167,11 +169,11 @@ def main():
                 max_lon,
                 max_lat,
                 hyp3_url,
-                f'{name}_{path}',
+                prefix,
                 bucket,
                 bucket_prefix,
             )
-        names.append(f'{name}_{path}')
+        names.append(prefix)
         min_lons.append(min_lon)
         min_lats.append(min_lat)
         max_lons.append(max_lon)
@@ -179,7 +181,7 @@ def main():
         tbaselines.append(int(tbaseline))
         pbaselines.append(int(pbaseline))
         processes.append(process)
-        bucket_prefixes.append(f'{name}_{path}')
+        bucket_prefixes.append(prefix)
 
     if not args.just_gslc and not args.just_ts:
         print('Please wait for the gslc jobs')
