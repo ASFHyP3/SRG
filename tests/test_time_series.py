@@ -51,3 +51,14 @@ def test_get_size_from_dem(tmp_path):
         rsc_file.write(rsc_content.strip())
     dem_width, dem_height = time_series.get_size_from_dem(dem_path=rsc_path)
     assert (dem_width, dem_height) == (1235, 873)
+
+
+def test_select_dates():
+    granules = [
+        's3://b/p/GSLC_granules/S1A_IW_RAW__0SDV_20230112T043053_20230112T043150_046746_059A9B_15A9.zip',
+        's3://b/p/GSLC_granules/S1A_IW_RAW__0SDV_20230124T043053_20230124T043151_046921_05A089_89F9.zip',
+        'S1A_IW_RAW__0SDV_20230205T043053_20230205T043150_047096_05A65E_22AC.zip',
+    ]
+    assert time_series.select_dates(granules, None, None) == granules
+    assert time_series.select_dates(granules, '2023-01-20', None) == granules[1:]
+    assert time_series.select_dates(granules, '20230112', '2023-01-24') == granules[:2]

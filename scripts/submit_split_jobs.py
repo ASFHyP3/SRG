@@ -61,6 +61,7 @@ def submit_ts(
     ignore: list[str],
     bucket: str,
     bucket_prefixes: list[str],
+    dates: list[tuple[str, str]],
 ) -> hyp3_sdk.Job:
     hyp3 = hyp3_sdk.HyP3(hyp3_url)
     batches = int(len(names) / 100) + 1
@@ -82,6 +83,8 @@ def submit_ts(
                     'process': processes[i],
                     'tbaseline': tbaselines[i],
                     'pbaseline': pbaselines[i],
+                    'start_date': dates[i][0],
+                    'end_date': dates[i][1],
                 },
             }
             if names[i] is not None:
@@ -144,7 +147,7 @@ def main():
     bucket = 'lavas-data'
     hyp3 = hyp3_sdk.HyP3(hyp3_url)
 
-    names, tbaselines, pbaselines, processes, bucket_prefixes = [], [], [], [], []
+    names, tbaselines, pbaselines, processes, bucket_prefixes, dates = [], [], [], [], [], []
     min_lons, min_lats, max_lons, max_lats = [], [], [], []
 
     jobs_gslcs = []
@@ -182,6 +185,7 @@ def main():
         pbaselines.append(int(pbaseline))
         processes.append(process)
         bucket_prefixes.append(prefix)
+        dates.append((start, end))
 
     if not args.just_gslc and not args.just_ts:
         print('Please wait for the gslc jobs')
@@ -216,6 +220,7 @@ def main():
             ignore,
             bucket,
             bucket_prefixes,
+            dates,
         )
         cont = input('Do you want to wait until the time series jobs are done (y/n):')
         if cont[0].lower() == 'y':
