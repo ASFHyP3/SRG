@@ -175,7 +175,7 @@ def compute_sbas_velocity_solution(
     if not ref_locs.exists() or not ref_locs.read_text().strip():
         # no reference points: use the 1000 pixels with the highest mean coherence (sbas takes their median)
         ccs = [work_dir / Path(f).with_suffix('.cc') for f in (work_dir / 'intlist').read_text().split()]
-        coh = sum(np.fromfile(f, np.float32).reshape(unw_length, 2, unw_width)[:, 1, :] for f in ccs)
+        coh = np.sum([np.fromfile(f, np.float32).reshape(unw_length, 2, unw_width)[:, 1, :] for f in ccs], axis=0)
         rows, cols = np.unravel_index(np.argsort(coh, axis=None)[-1000:], coh.shape)
         np.savetxt(ref_locs, np.c_[cols + 1, rows + 1], fmt='%d')
         log.warning('no reference points from cosine similarity; using the 1000 most coherent pixels')
