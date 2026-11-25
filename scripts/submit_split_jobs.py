@@ -18,20 +18,20 @@ def submit_gslcs(
     bucket_prefix: str,
 ) -> hyp3_sdk.Job:
     hyp3 = hyp3_sdk.HyP3(hyp3_url)
-    batches = int(len(granules) / 100) + 1
+    # one job per pass (platform + absolute orbit): back_projection merges same-date frames into one GSLC
+    passes: dict[tuple[str, str], list[str]] = {}
+    for granule in granules:
+        parts = granule.split('_')
+        passes.setdefault((parts[0], parts[7]), []).append(granule)
+    groups = list(passes.values())
     sub_jobs = []
-    for batch in range(batches):
-        ini = batch * 100
-        if batch == batches - 1:
-            fin = batch * 100 + len(granules) % 100
-        else:
-            fin = (batch + 1) * 100
+    for ini in range(0, len(groups), 100):
         jobs = []
-        for granule in granules[ini:fin]:
+        for group in groups[ini : ini + 100]:
             prepared_job = {
                 'job_type': 'SRG_GSLC',
                 'job_parameters': {
-                    'granules': [granule],
+                    'granules': group,
                     'bounds': [min_lon, min_lat, max_lon, max_lat],
                 },
             }
@@ -61,6 +61,7 @@ def submit_ts(
     ignore: list[str],
     bucket: str,
     bucket_prefixes: list[str],
+    dates: list[tuple[str, str]],
 ) -> hyp3_sdk.Job:
     hyp3 = hyp3_sdk.HyP3(hyp3_url)
     batches = int(len(names) / 100) + 1
@@ -82,6 +83,8 @@ def submit_ts(
                     'process': processes[i],
                     'tbaseline': tbaselines[i],
                     'pbaseline': pbaselines[i],
+                    'start_date': dates[i][0],
+                    'end_date': dates[i][1],
                 },
             }
             if names[i] is not None:
@@ -144,13 +147,15 @@ def main():
     bucket = 'lavas-data'
     hyp3 = hyp3_sdk.HyP3(hyp3_url)
 
-    names, tbaselines, pbaselines, processes, bucket_prefixes = [], [], [], [], []
+    names, tbaselines, pbaselines, processes, bucket_prefixes, dates = [], [], [], [], [], []
     min_lons, min_lats, max_lons, max_lats = [], [], [], []
 
     jobs_gslcs = []
     for job in jobs:
         spath, start, end, process, tbaseline, pbaseline, aoi, name = job.split(';')
         path = int(spath)
+        # name may hold the full bucket prefix, e.g. Hawaiian-Emperor-Hotspot-Volcano-Group/Kilauea/a{path}/sbas
+        prefix = name.format(path=path) if '{path}' in name else f'{name}_{path}'
         if 'POLYGON' in aoi:
             min_lon, min_lat, max_lon, max_lat = wkt_to_bbox(aoi)
         else:
@@ -158,7 +163,7 @@ def main():
         granules = get_granules(path, start, end, min_lon, min_lat, max_lon, max_lat)
 
         if args.just_gslc or not args.just_ts:
-            bucket_prefix = f'{name}_{path}/GSLC_granules'
+            bucket_prefix = f'{prefix}/GSLC_granules'
 
             jobs_gslcs += submit_gslcs(
                 granules,
@@ -167,11 +172,11 @@ def main():
                 max_lon,
                 max_lat,
                 hyp3_url,
-                f'{name}_{path}',
+                prefix,
                 bucket,
                 bucket_prefix,
             )
-        names.append(f'{name}_{path}')
+        names.append(prefix)
         min_lons.append(min_lon)
         min_lats.append(min_lat)
         max_lons.append(max_lon)
@@ -179,7 +184,8 @@ def main():
         tbaselines.append(int(tbaseline))
         pbaselines.append(int(pbaseline))
         processes.append(process)
-        bucket_prefixes.append(f'{name}_{path}')
+        bucket_prefixes.append(prefix)
+        dates.append((start, end))
 
     if not args.just_gslc and not args.just_ts:
         print('Please wait for the gslc jobs')
@@ -214,6 +220,7 @@ def main():
             ignore,
             bucket,
             bucket_prefixes,
+            dates,
         )
         cont = input('Do you want to wait until the time series jobs are done (y/n):')
         if cont[0].lower() == 'y':

@@ -35,6 +35,12 @@ def get_gslc_uris_from_s3(bucket: str, prefix: str = '') -> list[str]:
     return uris
 
 
+def select_dates(granules: Iterable[str], start_date: str | None, end_date: str | None) -> list[str]:
+    """Keep the GSLCs acquired from start_date to end_date (YYYY-MM-DD or YYYYMMDD, inclusive; None = open)."""
+    lo, hi = (start_date or '0').replace('-', ''), (end_date or '9').replace('-', '')
+    return [g for g in granules if lo <= Path(g).name.split('_')[5][:8] <= hi]
+
+
 def load_products(uris: Iterable[str], overwrite: bool = False):
     """Load the products from the provided URIs
 
@@ -353,6 +359,8 @@ def time_series(
     process: str = 'sbas',
     pbaseline: int = 1000,
     tbaseline: int = 60,
+    start_date: str | None = None,
+    end_date: str | None = None,
 ) -> None:
     """Create and package a time series stack from a set of Sentinel-1 GSLCs.
 
@@ -366,6 +374,8 @@ def time_series(
         process: Time series processing ps or sbas
         pbaseline: Perpendicular baseline limit
         tbaseline: Temporal baseline limit
+        start_date: only use GSLCs acquired on or after this date (YYYY-MM-DD)
+        end_date: only use GSLCs acquired on or before this date (YYYY-MM-DD)
     """
     if work_dir is None:
         work_dir = Path.cwd()
@@ -382,6 +392,7 @@ def time_series(
         if not (bucket and bucket_prefix):
             raise ValueError('bucket and bucket_prefix must be given if use_gslc_prefix is True')
         granules = get_gslc_uris_from_s3(bucket, f'{bucket_prefix}/GSLC_granules')
+    granules = select_dates(granules, start_date, end_date)
 
     granule_names = load_products(granules)
     dem_path = dem.download_dem_for_srg(bounds, work_dir)
@@ -429,6 +440,8 @@ def main():
     parser.add_argument('--process', help='SBAS or PS processing')
     parser.add_argument('--pbaseline', default=1000, type=int, help='Perpendicular baseline')
     parser.add_argument('--tbaseline', default=60, type=int, help='Temporal baseline')
+    parser.add_argument('--start-date', default=None, help='First acquisition date to use (YYYY-MM-DD)')
+    parser.add_argument('--end-date', default=None, help='Last acquisition date to use (YYYY-MM-DD)')
     parser.add_argument('granules', type=str.split, nargs='*', default='', help='GSLC granules.')
     args = parser.parse_args()
 

@@ -702,13 +702,13 @@ def make_browse(h5_dir: Path, out_dir: Path, coh_thresh: float = 0.3, lalo=None)
     )
     axs[0].plot(*ref_lonlat, 'ks', ms=5, mfc='none')
     ax = axs[1]
-    for k, (iy, ix) in enumerate(pixels):
+    for k, (iyt, ixt) in enumerate(pixels):
         color = plt.get_cmap('tab10')(k % 10)
-        box = np.s_[:, max(iy - 1, 0) : iy + 2, max(ix - 1, 0) : ix + 2]
+        box = np.s_[:, max(iyt - 1, 0) : iyt + 2, max(ixt - 1, 0) : ixt + 2]
         ts = read_h5(ts_file, 'timeseries', box).mean(axis=(1, 2))
-        lat, lon = y0 + iy * dy, x0 + ix * dx
+        lat, lon = y0 + iyt * dy, x0 + ixt * dx
         axs[0].scatter(lon, lat, marker='^', ec='k', fc=color, s=50, zorder=3)
-        label = f'{lat:.3f}°N, {lon:.3f}°E ({velocity[iy, ix]:.3f} m/yr)'
+        label = f'{lat:.3f}°N, {lon:.3f}°E ({velocity[iyt, ixt]:.3f} m/yr)'
         ax.plot(dates, ts, color='grey', lw=2, marker='o', ms=6, mfc=color, mec='k', alpha=0.8, label=label)
     ax.legend(fontsize=10)
     ax.set_xlabel('date')
