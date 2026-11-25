@@ -19,6 +19,7 @@ and uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     is still uploaded.
 - `h5py` dependency.
 - Added optional `start-date` and `end-date` filters to the `time_series` workflow.
+- Added comparison with GNSS stations for `time_series` workflow.
 
 ### Changed
 - `scripts/preview.py` moved into `src/srg/postprocess.py` so the HyP3 job can call it.

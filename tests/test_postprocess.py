@@ -115,17 +115,17 @@ def test_export_hdf5(tmp_path):
         assert f['bperp'].shape == (len(DATES),)
         attrs = dict(f.attrs)
         assert attrs['FILE_TYPE'] == 'timeseries' and attrs['UNIT'] == 'm' and attrs['REF_DATE'] == '20250101'
-        # middle ref_locs (7, 6) in 1-based (col, row) -> effective 0-based (row=6, col=6)
-        assert (attrs['REF_Y'], attrs['REF_X']) == ('6', '6')
-        assert np.all(f['timeseries'][:, 6, 6] == 0)
+        # ref_locs are 1-based (x, y); sbas already referenced the data, so they are kept as is
+        assert (int(attrs['REF_Y']), int(attrs['REF_X'])) in {(3, 4), (5, 6), (7, 8)}
+        assert 'median' in attrs['SRG_REF_METHOD']
+        np.testing.assert_allclose(f['timeseries'][-1], prod.displacement[-1])
     with h5py.File(tmp_path / 'hdf5' / 'velocity.h5') as f:
         assert f.attrs['FILE_TYPE'] == 'velocity' and f.attrs['UNIT'] == 'm/year'
-        np.testing.assert_allclose(f['velocity'][:], 0, atol=1e-6)  # uniform motion minus reference pixel
+        np.testing.assert_allclose(f['velocity'][:], VELOCITY, rtol=1e-4)  # not re-referenced
     with h5py.File(tmp_path / 'hdf5' / 'geometryGeo.h5') as f:
         assert f.attrs['FILE_TYPE'] == 'geometry' and f['height'].shape == (NAZ, NR)
     with h5py.File(tmp_path / 'hdf5' / 'avgPhaseVelocity.h5') as f:
-        expected = VELOCITY * (np.arange(NR) - 6) / NR  # relative to the reference column 6
-        np.testing.assert_allclose(f['velocity'][0], expected, atol=1e-6)
+        np.testing.assert_allclose(f['velocity'][0], VELOCITY * (1 + np.arange(NR) / NR), atol=1e-6)
     with h5py.File(tmp_path / 'hdf5' / 'numInvIfgram.h5') as f:
         assert f.attrs['FILE_TYPE'] == 'mask' and np.all(f['mask'][:] == len(DATES) - 1)
 
@@ -133,10 +133,10 @@ def test_export_hdf5(tmp_path):
 def test_reference_pixel_without_ref_locs(tmp_path):
     prod = postprocess.load_product(write_product(tmp_path / 'prod'))
     prod.coherence[12, 15] = 0.99
-    row, col, how = postprocess.reference_pixel(prod)
+    row, col, how, subtract = postprocess.reference_pixel(prod)
     assert 5 <= row < NAZ - 5 and 5 <= col < NR - 5
     assert abs(row - 12) <= 2 and abs(col - 15) <= 2
-    assert 'ref_locs empty' in how
+    assert 'ref_locs empty' in how and subtract
 
 
 def test_make_browse(tmp_path):

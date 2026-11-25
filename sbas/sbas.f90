@@ -19,7 +19,7 @@ PROGRAM sbas
   CHARACTER(100)::strint,strunw,stramp,strcc
   REAL,DIMENSION(:,:,:),ALLOCATABLE::coh,phase,temp3
   REAL,DIMENSION(:,:),ALLOCATABLE::amp,dat,mask,temp2,stack,stacktime
-  REAL,DIMENSION(:),ALLOCATABLE::temp1, phase_ref, disp
+  REAL,DIMENSION(:),ALLOCATABLE::temp1, phase_ref, disp, refs
   REAL,DIMENSION(:,:),ALLOCATABLE::Tm,deltime,Tminv,ident
   REAL,DIMENSION(:),ALLOCATABLE::Bperp,timedeltas
   INTEGER::r_ref,az_ref !reference pixel location
@@ -118,7 +118,7 @@ PROGRAM sbas
   close(27)
 
   !read in unwrapped igrams
-  !$omp parallel do private(k,dat,strint,stramp) &
+  !$omp parallel do private(k,dat,strint,stramp,refs) &
   !$omp shared(cells,ref_locs,deltime,nr,naz,ncells,phase,amps,phase_ref)
   DO i=1,ncells
      allocate (dat(nr*2,naz))
@@ -136,11 +136,16 @@ PROGRAM sbas
  
      deallocate(dat)
 
-    !  compute the reference phase for ith interferogram
+    !  reference phase for ith interferogram: median over the reference points, robust to deforming ones
      phase_ref(i)=0.
-     do k=1,n_refs
-        phase_ref(i)=phase_ref(i)+phase(ref_locs(1,k),ref_locs(2,k),i)/n_refs
-     end do
+     if (n_refs.gt.0) then
+        allocate (refs(n_refs))
+        do k=1,n_refs
+           refs(k)=phase(ref_locs(1,k),ref_locs(2,k),i)
+        end do
+        phase_ref(i)=median1d(refs,n_refs)
+        deallocate(refs)
+     end if
 
      ! subtract reference phase from each interferogram
      phase(:,:,i)=phase(:,:,i)-phase_ref(i)
@@ -280,6 +285,43 @@ END DO
 END FUNCTION Replace_Text
 
   !mean2d(mat): calculates the mean value of a 2D matrix mat with r rows and c columns
+  REAL FUNCTION median1d(x,n)
+    ! median (lower for even n) by quickselect; reorders x
+    INTEGER::n,k,l,r,i,j
+    REAL::x(n),p,t
+    k=(n+1)/2
+    l=1
+    r=n
+    do while (l.lt.r)
+       p=x((l+r)/2)
+       i=l
+       j=r
+       do while (i.le.j)
+          do while (x(i).lt.p)
+             i=i+1
+          end do
+          do while (x(j).gt.p)
+             j=j-1
+          end do
+          if (i.le.j) then
+             t=x(i)
+             x(i)=x(j)
+             x(j)=t
+             i=i+1
+             j=j-1
+          end if
+       end do
+       if (k.le.j) then
+          r=j
+       else if (k.ge.i) then
+          l=i
+       else
+          exit
+       end if
+    end do
+    median1d=x(k)
+  END FUNCTION median1d
+
   REAL FUNCTION mean2d(mat,rows,cols)
     IMPLICIT none
     REAL,INTENT(IN),DIMENSION(:,:) :: mat
